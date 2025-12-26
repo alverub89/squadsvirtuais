@@ -77,7 +77,7 @@ exports.handler = async (event) => {
       token,
       user: { id: user.id, name: user.name, email: user.email, avatarUrl: user.avatar_url },
     });
-  } catch (e) {
+  } catch {
     return json(500, { error: "Erro interno no login" });
   }
 };
