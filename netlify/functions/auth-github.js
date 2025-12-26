@@ -108,13 +108,13 @@ exports.handler = async (event) => {
       // 1) upsert user por email
       const userRes = await query(
         `
-        INSERT INTO sv.users (name, email, avatar_url, updated_at)
+        INSERT INTO sv.users (name, email, avatar_url, last_login_at)
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (email)
         DO UPDATE SET
           name = EXCLUDED.name,
           avatar_url = COALESCE(EXCLUDED.avatar_url, sv.users.avatar_url),
-          updated_at = EXCLUDED.updated_at
+          last_login_at = EXCLUDED.last_login_at
         RETURNING id, name, email, avatar_url
         `,
         [name, email, avatarUrl, now]
