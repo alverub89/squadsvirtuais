@@ -41,7 +41,7 @@ export default function App() {
       const res = await fetch('/.netlify/functions/auth-google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: idToken }),
+        body: JSON.stringify({ idToken }),
       })
 
       const data = await res.json()

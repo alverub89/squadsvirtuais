@@ -5,8 +5,8 @@ Este documento descreve as decisões arquiteturais do projeto Squads Virtuais.
 ## Stack Tecnológica
 
 ### Frontend
-- **React 19.2**: Biblioteca para interface de usuário
-- **Vite 7.2**: Build tool e dev server
+- **React**: Biblioteca para interface de usuário
+- **Vite**: Build tool e dev server
 - **@react-oauth/google**: Cliente OAuth 2.0 para Google
 - **ESLint**: Linter para garantir qualidade do código
 

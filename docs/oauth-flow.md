@@ -48,7 +48,7 @@ O login com Google usa o protocolo OAuth 2.0 com o fluxo de ID Token, implementa
 
 1. Acesse o [Google Cloud Console](https://console.cloud.google.com)
 2. Crie ou selecione um projeto
-3. Habilite a Google+ API
+3. Habilite o Google Sign-In API (Google Identity Services)
 4. Em "Credenciais", crie um "OAuth 2.0 Client ID"
 5. Configure as origens JavaScript autorizadas:
    - `https://squadsvirtuais.com` (produção)
