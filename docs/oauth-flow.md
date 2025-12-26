@@ -202,6 +202,23 @@ Isso permite que:
 
 ## Troubleshooting
 
+### Erro 500: "Erro interno no login" no Google OAuth
+
+**Sintoma**: POST para `/.netlify/functions/auth-google` retorna 500 com `{ "error": "Erro interno no login" }`
+
+**Causa**: Múltiplas causas possíveis - problema na validação do token, banco de dados, ou JWT.
+
+**Como diagnosticar**:
+1. Acesse logs da Netlify Function `auth-google`
+2. Procure por logs prefixados com `[auth-google]`, `[db]`, ou `[jwt]`
+3. Identifique em qual etapa o erro ocorreu
+4. Consulte [docs/auth-google-troubleshooting.md](auth-google-troubleshooting.md) para guia detalhado
+
+**Logs importantes para buscar**:
+- `[auth-google] Erro ao verificar token Google:` → Problema na validação com Google
+- `[db] Erro ao executar query:` → Problema no banco de dados
+- `[jwt] JWT_SECRET não configurado` → Variável de ambiente ausente
+
 ### Erro: "invalid_client" no Google OAuth
 - Verifique se `VITE_GOOGLE_CLIENT_ID` está configurado corretamente
 - Confirme que o Client ID no Google Cloud é o mesmo em frontend e backend
@@ -213,12 +230,14 @@ Isso permite que:
 - Verifique o callback URL configurado no GitHub OAuth App
 
 ### Usuário não é criado no banco
-- Verifique logs da Netlify Function
+- Verifique logs da Netlify Function (agora com logging detalhado)
 - Confirme que `DATABASE_URL` está correto
 - Verifique se as tabelas `sv.users` e `sv.user_identities` existem
 - Confirme que as constraints (UNIQUE) estão criadas
+- Procure por `[db] Código do erro:` nos logs para identificar problema específico
 
 ### Token JWT inválido
 - Verifique se `JWT_SECRET` é o mesmo em todas as funções
 - Confirme que o token não expirou
 - Verifique formato: deve ser `Bearer <token>`
+- Procure por `[jwt] Erro ao assinar JWT:` nos logs

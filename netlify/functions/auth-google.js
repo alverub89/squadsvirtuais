@@ -15,69 +15,148 @@ function json(statusCode, body) {
 
 exports.handler = async (event) => {
   try {
-    if (event.httpMethod !== "POST") return json(405, { error: "Method Not Allowed" });
-    if (!googleClientId) return json(500, { error: "VITE_GOOGLE_CLIENT_ID não configurado no backend" });
+    console.log("[auth-google] Iniciando autenticação Google");
+    
+    // Step 1: Validate HTTP method
+    if (event.httpMethod !== "POST") {
+      console.log("[auth-google] Método não permitido:", event.httpMethod);
+      return json(405, { error: "Method Not Allowed" });
+    }
 
-    const body = event.body ? JSON.parse(event.body) : {};
+    // Step 2: Check environment variables
+    if (!googleClientId) {
+      console.error("[auth-google] VITE_GOOGLE_CLIENT_ID não configurado");
+      return json(500, { error: "VITE_GOOGLE_CLIENT_ID não configurado no backend" });
+    }
+    console.log("[auth-google] VITE_GOOGLE_CLIENT_ID presente");
+
+    // Step 3: Parse request body
+    let body;
+    try {
+      body = event.body ? JSON.parse(event.body) : {};
+      console.log("[auth-google] Body parseado com sucesso");
+    } catch (parseError) {
+      console.error("[auth-google] Erro ao fazer parse do body:", parseError.message);
+      return json(400, { error: "Body JSON inválido" });
+    }
+
+    // Step 4: Validate idToken
     const idToken = body?.idToken;
-    if (!idToken || typeof idToken !== "string") return json(400, { error: "idToken é obrigatório" });
+    if (!idToken || typeof idToken !== "string") {
+      console.error("[auth-google] idToken ausente ou inválido no body");
+      return json(400, { error: "idToken é obrigatório" });
+    }
+    console.log("[auth-google] idToken recebido (primeiros 20 chars):", idToken.substring(0, 20) + "...");
 
-    const client = new OAuth2Client(googleClientId);
-    const ticket = await client.verifyIdToken({ idToken, audience: googleClientId });
-    const payload = ticket.getPayload();
-    if (!payload) return json(401, { error: "Token inválido" });
+    // Step 5: Verify Google token
+    let payload;
+    try {
+      const client = new OAuth2Client(googleClientId);
+      console.log("[auth-google] Verificando token Google...");
+      const ticket = await client.verifyIdToken({ idToken, audience: googleClientId });
+      payload = ticket.getPayload();
+      
+      if (!payload) {
+        console.error("[auth-google] Payload vazio após verificação");
+        return json(401, { error: "Token inválido" });
+      }
+      console.log("[auth-google] Token Google verificado com sucesso. Email:", payload.email);
+    } catch (verifyError) {
+      console.error("[auth-google] Erro ao verificar token Google:", verifyError.message);
+      return json(401, { error: "Falha ao verificar token Google" });
+    }
 
+    // Step 6: Extract user data
     const provider = "google";
     const providerUserId = payload.sub;
     const email = payload.email;
     const name = payload.name || email || "";
     const avatarUrl = payload.picture || "";
 
-    if (!email) return json(401, { error: "Email ausente no token" });
+    if (!email) {
+      console.error("[auth-google] Email ausente no payload do token");
+      return json(401, { error: "Email ausente no token" });
+    }
+    console.log("[auth-google] Dados extraídos - Email:", email, "| Nome:", name);
 
     const now = new Date().toISOString();
 
-    // 1) upsert user por email
-    const userRes = await query(
-      `
-      INSERT INTO sv.users (name, email, avatar_url, last_login_at)
-      VALUES ($1, $2, $3, $4)
-      ON CONFLICT (email)
-      DO UPDATE SET
-        name = EXCLUDED.name,
-        avatar_url = COALESCE(EXCLUDED.avatar_url, sv.users.avatar_url),
-        last_login_at = EXCLUDED.last_login_at
-      RETURNING id, name, email, avatar_url
-      `,
-      [name, email, avatarUrl, now]
-    );
+    // Step 7: Upsert user in database
+    let user;
+    try {
+      console.log("[auth-google] Fazendo upsert em sv.users...");
+      const userRes = await query(
+        `
+        INSERT INTO sv.users (name, email, avatar_url, last_login_at)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (email)
+        DO UPDATE SET
+          name = EXCLUDED.name,
+          avatar_url = COALESCE(EXCLUDED.avatar_url, sv.users.avatar_url),
+          last_login_at = EXCLUDED.last_login_at
+        RETURNING id, name, email, avatar_url
+        `,
+        [name, email, avatarUrl, now]
+      );
 
-    const user = userRes.rows[0];
+      if (!userRes.rows || userRes.rows.length === 0) {
+        console.error("[auth-google] Nenhum usuário retornado após upsert");
+        return json(500, { error: "Erro ao criar/atualizar usuário" });
+      }
 
-    // 2) upsert identity por (provider, provider_user_id)
-    await query(
-      `
-      INSERT INTO sv.user_identities (user_id, provider, provider_user_id, provider_email, raw_profile, last_login_at)
-      VALUES ($1, $2, $3, $4, $5::jsonb, $6)
-      ON CONFLICT (provider, provider_user_id)
-      DO UPDATE SET
-        user_id = EXCLUDED.user_id,
-        provider_email = EXCLUDED.provider_email,
-        raw_profile = EXCLUDED.raw_profile,
-        last_login_at = EXCLUDED.last_login_at
-      `,
-      [user.id, provider, providerUserId, email, JSON.stringify(payload), now]
-    );
+      user = userRes.rows[0];
+      console.log("[auth-google] Usuário criado/atualizado com sucesso. ID:", user.id);
+    } catch (dbError) {
+      console.error("[auth-google] Erro no upsert de sv.users:", dbError.message);
+      console.error("[auth-google] Stack:", dbError.stack);
+      return json(500, { error: "Erro ao salvar usuário no banco de dados" });
+    }
 
-    // 3) JWT do app
-    const token = signJwt({ userId: user.id, email: user.email, name: user.name });
+    // Step 8: Upsert user identity
+    try {
+      console.log("[auth-google] Fazendo upsert em sv.user_identities...");
+      await query(
+        `
+        INSERT INTO sv.user_identities (user_id, provider, provider_user_id, provider_email, raw_profile, last_login_at)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6)
+        ON CONFLICT (provider, provider_user_id)
+        DO UPDATE SET
+          user_id = EXCLUDED.user_id,
+          provider_email = EXCLUDED.provider_email,
+          raw_profile = EXCLUDED.raw_profile,
+          last_login_at = EXCLUDED.last_login_at
+        `,
+        [user.id, provider, providerUserId, email, JSON.stringify(payload), now]
+      );
+      console.log("[auth-google] Identidade criada/atualizada com sucesso");
+    } catch (identityError) {
+      console.error("[auth-google] Erro no upsert de sv.user_identities:", identityError.message);
+      console.error("[auth-google] Stack:", identityError.stack);
+      return json(500, { error: "Erro ao salvar identidade do usuário" });
+    }
 
+    // Step 9: Generate JWT
+    let token;
+    try {
+      console.log("[auth-google] Gerando JWT...");
+      token = signJwt({ userId: user.id, email: user.email, name: user.name });
+      console.log("[auth-google] JWT gerado com sucesso");
+    } catch (jwtError) {
+      console.error("[auth-google] Erro ao gerar JWT:", jwtError.message);
+      return json(500, { error: "Erro ao gerar token de autenticação" });
+    }
+
+    // Step 10: Success response
+    console.log("[auth-google] Autenticação concluída com sucesso para:", email);
     return json(200, {
       ok: true,
       token,
       user: { id: user.id, name: user.name, email: user.email, avatarUrl: user.avatar_url },
     });
-  } catch {
+  } catch (unexpectedError) {
+    // Catch any unexpected errors that weren't handled above
+    console.error("[auth-google] Erro inesperado:", unexpectedError.message);
+    console.error("[auth-google] Stack:", unexpectedError.stack);
     return json(500, { error: "Erro interno no login" });
   }
 };
