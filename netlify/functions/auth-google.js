@@ -3,7 +3,10 @@ const { OAuth2Client } = require("google-auth-library");
 const { query } = require("./_lib/db");
 const { signJwt } = require("./_lib/jwt");
 
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientId =
+  process.env.GOOGLE_CLIENT_ID ||
+  process.env.VITE_GOOGLE_CLIENT_ID ||
+  process.env.GOOGLE_CLIENT_ID?.trim();
 
 function json(statusCode, body) {
   return {
