@@ -3,10 +3,7 @@ const { OAuth2Client } = require("google-auth-library");
 const { query } = require("./_lib/db");
 const { signJwt } = require("./_lib/jwt");
 
-const googleClientId =
-  process.env.GOOGLE_CLIENT_ID ||
-  process.env.VITE_GOOGLE_CLIENT_ID ||
-  process.env.GOOGLE_CLIENT_ID?.trim();
+const googleClientId = process.env.VITE_GOOGLE_CLIENT_ID;
 
 function json(statusCode, body) {
   return {
@@ -19,7 +16,7 @@ function json(statusCode, body) {
 exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") return json(405, { error: "Method Not Allowed" });
-    if (!googleClientId) return json(500, { error: "GOOGLE_CLIENT_ID ausente no backend" });
+    if (!googleClientId) return json(500, { error: "VITE_GOOGLE_CLIENT_ID não configurado no backend" });
 
     const body = event.body ? JSON.parse(event.body) : {};
     const idToken = body?.idToken;

@@ -5,12 +5,11 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
 import App from './App.jsx'
 
-const googleClientId =
-  import.meta.env.VITE_GOOGLE_CLIENT_ID || window.googleClientId || ''
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-console.log('VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID)
-console.log('window.googleClientId:', window.googleClientId)
-console.log('googleClientId final:', googleClientId)
+if (!googleClientId) {
+  console.error('VITE_GOOGLE_CLIENT_ID não está configurado');
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -20,7 +19,7 @@ createRoot(document.getElementById('root')).render(
       </GoogleOAuthProvider>
     ) : (
       <div style={{ padding: 20 }}>
-        Falta configurar VITE_GOOGLE_CLIENT_ID no Netlify (ou window.googleClientId).
+        Erro: VITE_GOOGLE_CLIENT_ID não está configurado no ambiente.
       </div>
     )}
   </StrictMode>
