@@ -108,13 +108,13 @@ exports.handler = async (event) => {
       // 1) upsert user por email
       const userRes = await query(
         `
-        INSERT INTO sv.users (name, email, avatar_url, last_login_at)
+        INSERT INTO sv.users (name, email, avatar_url, updated_at)
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (email)
         DO UPDATE SET
           name = EXCLUDED.name,
           avatar_url = COALESCE(EXCLUDED.avatar_url, sv.users.avatar_url),
-          last_login_at = EXCLUDED.last_login_at
+          updated_at = EXCLUDED.updated_at
         RETURNING id, name, email, avatar_url
         `,
         [name, email, avatarUrl, now]
@@ -125,16 +125,16 @@ exports.handler = async (event) => {
       // 2) upsert identity por (provider, provider_user_id)
       await query(
         `
-        INSERT INTO sv.user_identities (user_id, provider, provider_user_id, provider_email, raw_profile, last_login_at)
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6)
+        INSERT INTO sv.user_identities (user_id, provider, provider_user_id, email, name, avatar_url, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (provider, provider_user_id)
         DO UPDATE SET
-          user_id = EXCLUDED.user_id,
-          provider_email = EXCLUDED.provider_email,
-          raw_profile = EXCLUDED.raw_profile,
-          last_login_at = EXCLUDED.last_login_at
+          email = EXCLUDED.email,
+          name = EXCLUDED.name,
+          avatar_url = EXCLUDED.avatar_url,
+          updated_at = EXCLUDED.updated_at
         `,
-        [user.id, provider, providerUserId, email, JSON.stringify(githubUser), now]
+        [user.id, provider, providerUserId, email, name, avatarUrl, now]
       );
 
       // 3) JWT do app
