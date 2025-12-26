@@ -1,15 +1,13 @@
-import pg from "pg";
+// netlify/functions/_lib/db.js
+const { Pool } = require("pg");
 
-const { Pool } = pg;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: true } : false,
+});
 
-let pool;
-
-export function getPool() {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: true } : false,
-    });
-  }
-  return pool;
+async function query(text, params) {
+  return pool.query(text, params);
 }
+
+module.exports = { query };
