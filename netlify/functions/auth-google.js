@@ -60,7 +60,7 @@ exports.handler = async (event) => {
         console.error("[auth-google] Payload vazio após verificação");
         return json(401, { error: "Token inválido" });
       }
-      console.log("[auth-google] Token Google verificado com sucesso");
+      console.log("[auth-google] ✓ validated_token - Token Google verificado com sucesso");
     } catch (verifyError) {
       console.error("[auth-google] Erro ao verificar token Google:", verifyError.message);
       return json(401, { error: "Falha ao verificar token Google" });
@@ -105,34 +105,48 @@ exports.handler = async (event) => {
       }
 
       user = userRes.rows[0];
-      console.log("[auth-google] Usuário criado/atualizado com sucesso");
+      console.log("[auth-google] ✓ upsert_user_ok - Usuário criado/atualizado com sucesso, user_id:", user.id);
     } catch (dbError) {
       console.error("[auth-google] Erro no upsert de sv.users:", dbError.message);
       console.error("[auth-google] Stack:", dbError.stack);
-      return json(500, { error: "Erro ao salvar usuário no banco de dados" });
+      const errorCode = dbError.code || 'unknown';
+      const constraintName = dbError.constraint || 'none';
+      return json(500, { 
+        error: "Erro ao salvar usuário no banco de dados",
+        code: errorCode,
+        constraint: constraintName
+      });
     }
 
     // Step 8: Upsert user identity
     try {
-      console.log("[auth-google] Fazendo upsert em sv.user_identities...");
+      console.log("[auth-google] → upsert_identity_attempt - user_id:", user.id, "provider:", provider);
       await query(
         `
-        INSERT INTO sv.user_identities (user_id, provider, provider_user_id, provider_email, raw_profile, last_login_at)
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6)
+        INSERT INTO sv.user_identities (user_id, provider, provider_user_id, provider_email, raw_profile, last_login_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $6)
         ON CONFLICT (provider, provider_user_id)
         DO UPDATE SET
-          user_id = EXCLUDED.user_id,
           provider_email = EXCLUDED.provider_email,
           raw_profile = EXCLUDED.raw_profile,
-          last_login_at = EXCLUDED.last_login_at
+          last_login_at = EXCLUDED.last_login_at,
+          updated_at = EXCLUDED.updated_at
         `,
         [user.id, provider, providerUserId, email, JSON.stringify(payload), now]
       );
-      console.log("[auth-google] Identidade criada/atualizada com sucesso");
+      console.log("[auth-google] ✓ upsert_identity_ok - Identidade criada/atualizada com sucesso");
     } catch (identityError) {
       console.error("[auth-google] Erro no upsert de sv.user_identities:", identityError.message);
       console.error("[auth-google] Stack:", identityError.stack);
-      return json(500, { error: "Erro ao salvar identidade do usuário" });
+      const errorCode = identityError.code || 'unknown';
+      const constraintName = identityError.constraint || 'none';
+      const errorDetail = identityError.detail || 'no details';
+      return json(500, { 
+        error: "Erro ao salvar identidade do usuário",
+        code: errorCode,
+        constraint: constraintName,
+        detail: errorDetail
+      });
     }
 
     // Step 9: Generate JWT
