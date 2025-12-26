@@ -27,6 +27,9 @@ async function query(text, params) {
     console.error("[db] Erro ao executar query:", error.message);
     console.error("[db] Código do erro:", error.code);
     console.error("[db] Detalhes:", error.detail);
+    console.error("[db] Constraint:", error.constraint);
+    console.error("[db] Schema:", error.schema);
+    console.error("[db] Tabela:", error.table);
     throw error;
   }
 }
