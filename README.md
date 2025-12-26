@@ -21,8 +21,11 @@ Ambos os fluxos:
 - Criam/atualizam usuário no banco de dados
 - Geram token JWT próprio da aplicação
 - Sessão válida por 7 dias
+- Incluem logging detalhado para debugging em produção
 
 Para detalhes técnicos, consulte [docs/oauth-flow.md](docs/oauth-flow.md).
+
+**Troubleshooting**: Se encontrar erros no login Google, consulte [docs/auth-google-troubleshooting.md](docs/auth-google-troubleshooting.md) para um guia detalhado de diagnóstico.
 
 ## ⚙️ Variáveis de Ambiente
 
@@ -90,6 +93,7 @@ Configurações no Netlify:
 ## 📚 Documentação
 
 - [OAuth Flow](docs/oauth-flow.md) - Fluxo detalhado de autenticação Google e GitHub
+- [Google Auth Troubleshooting](docs/auth-google-troubleshooting.md) - Guia de diagnóstico e resolução de problemas do login Google
 - [Architecture](docs/architecture.md) - Decisões arquiteturais e estrutura do projeto
 - [Environment Variables](docs/environment-variables.md) - Lista completa de variáveis de ambiente
 
