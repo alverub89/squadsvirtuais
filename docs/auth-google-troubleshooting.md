@@ -80,7 +80,7 @@ fetch('/.netlify/functions/auth-google', {
 [auth-google] Iniciando autenticação Google
 [auth-google] VITE_GOOGLE_CLIENT_ID presente
 [auth-google] Body parseado com sucesso
-[auth-google] idToken recebido (primeiros 20 chars): eyJhbGciOiJSUzI1NiIs...
+[auth-google] idToken recebido (length: 1234 chars)
 ```
 
 **Possíveis erros**:
@@ -219,7 +219,7 @@ const token = signJwt({
 **Logs esperados**:
 ```
 [auth-google] Gerando JWT...
-[jwt] Gerando JWT para userId: 42
+[jwt] Gerando JWT para usuário
 [auth-google] JWT gerado com sucesso
 ```
 
@@ -451,7 +451,7 @@ Use este checklist para validar a configuração:
 [auth-google] Iniciando autenticação Google
 [auth-google] VITE_GOOGLE_CLIENT_ID presente
 [auth-google] Body parseado com sucesso
-[auth-google] idToken recebido (primeiros 20 chars): eyJhbGc...
+[auth-google] idToken recebido (length: 1234 chars)
 [auth-google] Verificando token Google...
 [auth-google] Token Google verificado com sucesso. Email: user@example.com
 [auth-google] Dados extraídos - Email: user@example.com | Nome: User
@@ -464,7 +464,7 @@ Use este checklist para validar a configuração:
 [db] Query executada com sucesso. Linhas retornadas: 0
 [auth-google] Identidade criada/atualizada com sucesso
 [auth-google] Gerando JWT...
-[jwt] Gerando JWT para userId: 1
+[jwt] Gerando JWT para usuário
 [auth-google] JWT gerado com sucesso
 [auth-google] Autenticação concluída com sucesso para: user@example.com
 ```

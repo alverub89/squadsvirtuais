@@ -16,7 +16,7 @@ function signJwt(payload) {
   }
   
   try {
-    console.log("[jwt] Gerando JWT para userId:", payload.userId);
+    console.log("[jwt] Gerando JWT para usuário");
     const token = jwt.sign(payload, secret, { expiresIn });
     return token;
   } catch (error) {

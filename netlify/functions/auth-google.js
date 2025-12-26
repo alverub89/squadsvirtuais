@@ -46,7 +46,7 @@ exports.handler = async (event) => {
       console.error("[auth-google] idToken ausente ou inválido no body");
       return json(400, { error: "idToken é obrigatório" });
     }
-    console.log("[auth-google] idToken recebido (primeiros 20 chars):", idToken.substring(0, 20) + "...");
+    console.log("[auth-google] idToken recebido (length:", idToken.length, "chars)");
 
     // Step 5: Verify Google token
     let payload;
