@@ -45,7 +45,7 @@ exports.handler = async (event) => {
     }
 
     return json(200, { user: rows[0] });
-  } catch (e) {
+  } catch {
     return json(500, { error: "Erro interno" });
   }
 };
