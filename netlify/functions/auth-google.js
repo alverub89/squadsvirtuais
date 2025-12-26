@@ -60,7 +60,7 @@ exports.handler = async (event) => {
         console.error("[auth-google] Payload vazio após verificação");
         return json(401, { error: "Token inválido" });
       }
-      console.log("[auth-google] Token Google verificado com sucesso. Email:", payload.email);
+      console.log("[auth-google] Token Google verificado com sucesso");
     } catch (verifyError) {
       console.error("[auth-google] Erro ao verificar token Google:", verifyError.message);
       return json(401, { error: "Falha ao verificar token Google" });
@@ -77,7 +77,7 @@ exports.handler = async (event) => {
       console.error("[auth-google] Email ausente no payload do token");
       return json(401, { error: "Email ausente no token" });
     }
-    console.log("[auth-google] Dados extraídos - Email:", email, "| Nome:", name);
+    console.log("[auth-google] Dados do usuário extraídos com sucesso");
 
     const now = new Date().toISOString();
 
@@ -105,7 +105,7 @@ exports.handler = async (event) => {
       }
 
       user = userRes.rows[0];
-      console.log("[auth-google] Usuário criado/atualizado com sucesso. ID:", user.id);
+      console.log("[auth-google] Usuário criado/atualizado com sucesso");
     } catch (dbError) {
       console.error("[auth-google] Erro no upsert de sv.users:", dbError.message);
       console.error("[auth-google] Stack:", dbError.stack);
@@ -147,7 +147,7 @@ exports.handler = async (event) => {
     }
 
     // Step 10: Success response
-    console.log("[auth-google] Autenticação concluída com sucesso para:", email);
+    console.log("[auth-google] Autenticação concluída com sucesso");
     return json(200, {
       ok: true,
       token,

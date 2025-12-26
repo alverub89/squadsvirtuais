@@ -301,6 +301,26 @@ grep "\[db\]" function-logs.txt
 - `[db]`: Operações de banco de dados (queries, erros de conexão)
 - `[jwt]`: Operações de geração/validação de JWT
 
+### Segurança e Privacidade nos Logs
+
+**Importante**: Os logs foram projetados para fornecer informações de diagnóstico sem expor dados sensíveis:
+
+✅ **O que é logado**:
+- Etapas do fluxo de autenticação (sucesso/falha)
+- Comprimento do token (não o conteúdo)
+- Tipo de erro (sem dados pessoais)
+- Códigos de erro do banco de dados
+- Número de linhas afetadas
+
+❌ **O que NÃO é logado**:
+- Conteúdo completo ou parcial de tokens
+- Endereços de email dos usuários
+- Nomes completos
+- IDs de usuário
+- Dados pessoais identificáveis
+
+Esta abordagem permite diagnosticar problemas em produção mantendo a privacidade dos usuários.
+
 ---
 
 ## Erros Comuns e Soluções
@@ -446,19 +466,19 @@ Use este checklist para validar a configuração:
 3. Filtre por `[auth-google]` para ver o fluxo completo
 4. Identifique onde o fluxo parou
 
-**Exemplo de log de sucesso**:
+**Logs esperados**:
 ```
 [auth-google] Iniciando autenticação Google
 [auth-google] VITE_GOOGLE_CLIENT_ID presente
 [auth-google] Body parseado com sucesso
 [auth-google] idToken recebido (length: 1234 chars)
 [auth-google] Verificando token Google...
-[auth-google] Token Google verificado com sucesso. Email: user@example.com
-[auth-google] Dados extraídos - Email: user@example.com | Nome: User
+[auth-google] Token Google verificado com sucesso
+[auth-google] Dados do usuário extraídos com sucesso
 [db] Executando query...
 [auth-google] Fazendo upsert em sv.users...
 [db] Query executada com sucesso. Linhas retornadas: 1
-[auth-google] Usuário criado/atualizado com sucesso. ID: 1
+[auth-google] Usuário criado/atualizado com sucesso
 [auth-google] Fazendo upsert em sv.user_identities...
 [db] Executando query...
 [db] Query executada com sucesso. Linhas retornadas: 0
@@ -466,7 +486,7 @@ Use este checklist para validar a configuração:
 [auth-google] Gerando JWT...
 [jwt] Gerando JWT para usuário
 [auth-google] JWT gerado com sucesso
-[auth-google] Autenticação concluída com sucesso para: user@example.com
+[auth-google] Autenticação concluída com sucesso
 ```
 
 ### Passo 4: Identificar o Problema
