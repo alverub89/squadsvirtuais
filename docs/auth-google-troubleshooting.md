@@ -106,8 +106,8 @@ const payload = ticket.getPayload();
 **Logs esperados**:
 ```
 [auth-google] Verificando token Google...
-[auth-google] Token Google verificado com sucesso. Email: usuario@example.com
-[auth-google] Dados extraídos - Email: usuario@example.com | Nome: João Silva
+[auth-google] Token Google verificado com sucesso
+[auth-google] Dados do usuário extraídos com sucesso
 ```
 
 **Possíveis erros**:
@@ -145,7 +145,7 @@ RETURNING id, name, email, avatar_url
 [db] Executando query...
 [auth-google] Fazendo upsert em sv.users...
 [db] Query executada com sucesso. Linhas retornadas: 1
-[auth-google] Usuário criado/atualizado com sucesso. ID: 42
+[auth-google] Usuário criado/atualizado com sucesso
 ```
 
 **Possíveis erros**:
@@ -201,6 +201,13 @@ DO UPDATE SET
 2. Verificar constraints: `\d sv.user_identities`
 3. Verificar que user_id existe em sv.users
 
+**Nota sobre `raw_profile`**: O payload completo do Google é armazenado em `raw_profile` para:
+- Permitir auditoria futura
+- Facilitar debugging de problemas OAuth
+- Suportar novos campos sem alteração de schema
+
+Este campo contém o JWT payload do Google (email, name, picture, etc) e deve ter acesso controlado via políticas de banco de dados.
+
 ---
 
 ### Passo 7: Gerar JWT da Aplicação
@@ -251,7 +258,7 @@ return json(200, {
 
 **Logs esperados**:
 ```
-[auth-google] Autenticação concluída com sucesso para: usuario@example.com
+[auth-google] Autenticação concluída com sucesso
 ```
 
 **Frontend recebe**:
@@ -267,6 +274,8 @@ return json(200, {
   }
 }
 ```
+
+**Nota**: O email e outros dados pessoais são retornados apenas na resposta HTTP para o frontend, nunca são registrados nos logs do servidor.
 
 ---
 
