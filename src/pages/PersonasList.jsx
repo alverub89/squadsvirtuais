@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useWorkspace } from '../contexts/WorkspaceContext'
 import Layout from '../components/Layout'
 import './PersonasList.css'
 
 export default function PersonasList() {
   const { workspaceId } = useParams()
   const { token } = useAuth()
-  const { activeWorkspace } = useWorkspace()
   const navigate = useNavigate()
   const [personas, setPersonas] = useState([])
   const [loading, setLoading] = useState(true)
