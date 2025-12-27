@@ -163,29 +163,67 @@ export default function SquadDetail() {
       <div className="squad-detail-container">
         {/* Header */}
         <div className="squad-header">
-          <button 
-            className="btn-back"
-            onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
-          >
-            ← Voltar
-          </button>
           <div className="squad-title-section">
-            <div className="title-with-badge">
-              {isEditing ? (
-                <input
-                  type="text"
-                  className="edit-title-input"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                />
-              ) : (
-                <>
-                  <h1>{squad.name}</h1>
-                  <span className={`status-badge status-${squad.status}`}>
-                    {statusLabels[squad.status] || squad.status}
-                  </span>
-                </>
-              )}
+            <div className="title-with-badge-and-actions">
+              <button 
+                className="btn-back"
+                onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
+              >
+                ← 
+              </button>
+              <div className="title-with-badge">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    className="edit-title-input"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  />
+                ) : (
+                  <>
+                    <h1>{squad.name}</h1>
+                    <span className={`status-badge status-${squad.status}`}>
+                      {statusLabels[squad.status] || squad.status}
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="squad-actions-inline">
+                <button className="btn-icon" onClick={handleEdit} title={isEditing ? 'Salvar' : 'Editar'}>
+                  {isEditing ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  )}
+                </button>
+                {isEditing ? (
+                  <button className="btn-icon" onClick={() => {
+                    setIsEditing(false)
+                    setEditForm({
+                      name: squad.name,
+                      description: squad.description || '',
+                      status: squad.status
+                    })
+                  }} title="Cancelar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                ) : (
+                  <button className="btn-icon btn-icon-danger" onClick={handleDelete} title="Excluir">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
             {isEditing ? (
               <textarea
@@ -196,28 +234,6 @@ export default function SquadDetail() {
               />
             ) : (
               squad.description && <p className="squad-subtitle">{squad.description}</p>
-            )}
-          </div>
-          <div className="squad-actions">
-            <button className="btn btn-secondary" onClick={handleEdit}>
-              {isEditing ? 'Salvar' : 'Editar'}
-            </button>
-            {isEditing && (
-              <button className="btn btn-secondary" onClick={() => {
-                setIsEditing(false)
-                setEditForm({
-                  name: squad.name,
-                  description: squad.description || '',
-                  status: squad.status
-                })
-              }}>
-                Cancelar
-              </button>
-            )}
-            {!isEditing && (
-              <button className="btn btn-danger" onClick={handleDelete}>
-                Excluir
-              </button>
             )}
           </div>
         </div>
