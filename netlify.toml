@@ -1,2 +1,21 @@
+# Build configuration
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Netlify Functions configuration
 [functions]
   directory = "netlify/functions"
+
+# Redirect rules for SPA routing
+# Preserve Netlify Functions routes first
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Catch-all redirect for SPA - serve index.html for all routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
