@@ -5,14 +5,23 @@ export default function DecisionModal({ decision, onClose }) {
 
   // Format date
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    if (!dateString) return 'Data não disponível'
+    
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return 'Data inválida'
+      }
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch {
+      return 'Data inválida'
+    }
   }
 
   // Helper to render decision content
@@ -23,14 +32,19 @@ export default function DecisionModal({ decision, onClose }) {
     if (typeof decision.decision === 'object') {
       return (
         <div className="decision-structured">
-          {Object.entries(decision.decision).map(([key, value]) => (
-            <div key={key} className="decision-field">
-              <strong className="decision-field-label">{key}:</strong>
-              <div className="decision-field-value">
-                {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+          {Object.entries(decision.decision).map(([key, value], index) => {
+            // Sanitize the key for display
+            const sanitizedKey = String(key).replace(/[<>]/g, '')
+            
+            return (
+              <div key={`field-${index}`} className="decision-field">
+                <strong className="decision-field-label">{sanitizedKey}:</strong>
+                <div className="decision-field-value">
+                  {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )
     }
