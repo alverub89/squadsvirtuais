@@ -329,7 +329,7 @@ Access-Control-Allow-Methods: GET, POST, OPTIONS
 
 **Required:**
 - `GITHUB_CLIENT_ID`: GitHub OAuth App Client ID
-- `GITHUB_CLIENT_SECRET`: GitHub OAuth App Client Secret
+- `GITHUB_CLIENT_SECRETS_OAUTH`: GitHub OAuth App Client Secret
 - `DATABASE_URL`: PostgreSQL connection string
 
 **Optional:**

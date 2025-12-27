@@ -104,7 +104,7 @@ O login com GitHub usa o protocolo OAuth 2.0 com fluxo de autorização (Authori
 
 **Backend (Netlify Functions):**
 - `GITHUB_CLIENT_ID`: Client ID do OAuth App no GitHub
-- `GITHUB_CLIENT_SECRET`: Client Secret do OAuth App no GitHub
+- `GITHUB_CLIENT_SECRETS_OAUTH`: Client Secret do OAuth App no GitHub
 - `FRONTEND_URL`: URL do frontend em produção (ex: `https://squadsvirtuais.com`)
 - `JWT_SECRET`: Segredo para assinar tokens JWT
 - `DATABASE_URL`: String de conexão PostgreSQL

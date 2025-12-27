@@ -39,7 +39,7 @@ Content-Type: application/json
 
 ```bash
 GITHUB_CLIENT_ID=Iv1.abc123def456789
-GITHUB_CLIENT_SECRET=secret123...
+GITHUB_CLIENT_SECRETS_OAUTH=secret123...
 FRONTEND_URL=https://squadsvirtuais.com
 DATABASE_URL=postgresql://...
 JWT_SECRET=your-secret
@@ -133,7 +133,7 @@ async function connectRepo(workspaceId, repoFullName) {
 
 ## Security Notes
 
-- ⚠️ Never expose `GITHUB_CLIENT_SECRET` to frontend
+- ⚠️ Never expose `GITHUB_CLIENT_SECRETS_OAUTH` to frontend
 - ⚠️ Access tokens never leave the backend
 - ⚠️ All OAuth handled server-side
 - ✅ CORS enabled on all endpoints

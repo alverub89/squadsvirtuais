@@ -320,7 +320,7 @@ try {
 
 Nunca commitar no repositório:
 - `JWT_SECRET`
-- `GITHUB_CLIENT_SECRET`
+- `GITHUB_CLIENT_SECRETS_OAUTH`
 - `DATABASE_URL`
 
 Configurar no Netlify Dashboard > Site Settings > Environment Variables.
@@ -386,7 +386,7 @@ Produção obrigatoriamente usa HTTPS:
 **Environment Variables** (configurar no Netlify):
 - `VITE_GOOGLE_CLIENT_ID`: Client ID do Google OAuth
 - `GITHUB_CLIENT_ID`: Client ID do GitHub OAuth
-- `GITHUB_CLIENT_SECRET`: Secret do GitHub OAuth
+- `GITHUB_CLIENT_SECRETS_OAUTH`: Secret do GitHub OAuth
 - `FRONTEND_URL`: `https://squadsvirtuais.com`
 - `JWT_SECRET`: String aleatória longa (min 32 chars)
 - `JWT_EXPIRES_IN`: `7d` (ou outro valor)

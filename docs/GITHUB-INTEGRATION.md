@@ -105,7 +105,7 @@ Connect a repository to a workspace.
 
 Required:
 - `GITHUB_CLIENT_ID`: GitHub OAuth App Client ID
-- `GITHUB_CLIENT_SECRET`: GitHub OAuth App Client Secret
+- `GITHUB_CLIENT_SECRETS_OAUTH`: GitHub OAuth App Client Secret
 - `FRONTEND_URL`: Frontend URL for redirects (default: https://squadsvirtuais.com)
 - `DATABASE_URL`: PostgreSQL connection string
 

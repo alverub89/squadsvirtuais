@@ -206,7 +206,7 @@ Created comprehensive documentation:
 ```bash
 # GitHub OAuth App
 GITHUB_CLIENT_ID=Iv1.abc123def456789
-GITHUB_CLIENT_SECRET=secret123...
+GITHUB_CLIENT_SECRETS_OAUTH=secret123...
 
 # Frontend URL (already existed, usage expanded)
 FRONTEND_URL=https://squadsvirtuais.com
