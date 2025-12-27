@@ -2,9 +2,10 @@
 -- Date: 2025-12-27
 -- Purpose: Allow squad_roles to have custom name and description that override role references
 
--- Add name column to squad_roles if it doesn't exist
+-- Add name and description columns to squad_roles if they don't exist
 DO $$ 
 BEGIN
+  -- Add name column if it doesn't exist
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'sv' 
@@ -14,11 +15,8 @@ BEGIN
     ALTER TABLE sv.squad_roles 
       ADD COLUMN name TEXT;
   END IF;
-END $$;
 
--- Add description column to squad_roles if it doesn't exist
-DO $$ 
-BEGIN
+  -- Add description column if it doesn't exist
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'sv' 
