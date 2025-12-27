@@ -43,6 +43,7 @@ exports.handler = async (event) => {
       }
 
       // Get squad roles with details from global or workspace roles
+      // Prefer custom name/description from squad_roles if set, otherwise use from role/workspace_role
       const result = await query(
         `
         SELECT 
@@ -50,6 +51,8 @@ exports.handler = async (event) => {
           sr.squad_id,
           sr.active,
           sr.created_at,
+          sr.name as custom_name,
+          sr.description as custom_description,
           CASE 
             WHEN sr.role_id IS NOT NULL THEN 'global'
             ELSE 'workspace'
@@ -57,13 +60,14 @@ exports.handler = async (event) => {
           COALESCE(r.id, wr.id) as role_id,
           COALESCE(r.code, wr.code) as code,
           COALESCE(r.label, wr.label) as label,
-          COALESCE(r.description, wr.description) as description,
+          COALESCE(sr.name, r.label, wr.label) as name,
+          COALESCE(sr.description, r.description, wr.description) as description,
           COALESCE(r.responsibilities, wr.responsibilities) as responsibilities
         FROM sv.squad_roles sr
         LEFT JOIN sv.roles r ON sr.role_id = r.id
         LEFT JOIN sv.workspace_roles wr ON sr.workspace_role_id = wr.id
         WHERE sr.squad_id = $1
-        ORDER BY sr.active DESC, label
+        ORDER BY sr.active DESC, name
         `,
         [squadId]
       );
@@ -81,7 +85,7 @@ exports.handler = async (event) => {
       console.log("[squad-roles] Ativando role na squad");
 
       const body = JSON.parse(event.body || "{}");
-      const { squad_id, role_id, workspace_role_id } = body;
+      const { squad_id, role_id, workspace_role_id, name, description } = body;
 
       if (!squad_id) {
         return json(400, { error: "squad_id é obrigatório" });
@@ -140,12 +144,14 @@ exports.handler = async (event) => {
           squad_id,
           role_id,
           workspace_role_id,
+          name,
+          description,
           active
         )
-        VALUES ($1, $2, $3, true)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING *
         `,
-        [squad_id, role_id || null, workspace_role_id || null]
+        [squad_id, role_id || null, workspace_role_id || null, name || null, description || null]
       );
 
       console.log("[squad-roles] Squad role ativado:", result.rows[0].id);
@@ -165,7 +171,7 @@ exports.handler = async (event) => {
       const squadRoleIdFromPath = pathParts[pathParts.length - 1];
       
       const body = JSON.parse(event.body || "{}");
-      const { active, squad_role_id } = body;
+      const { active, squad_role_id, name, description } = body;
 
       // Use path ID if it's a valid UUID, otherwise use body ID
       const squadRoleId = squadRoleIdFromPath && squadRoleIdFromPath.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) 
@@ -176,9 +182,35 @@ exports.handler = async (event) => {
         return json(400, { error: "Squad role ID é obrigatório" });
       }
 
-      if (active === undefined) {
-        return json(400, { error: "active é obrigatório" });
+      // Build dynamic update query based on provided fields
+      const updates = [];
+      const values = [];
+      let paramCount = 1;
+
+      if (active !== undefined) {
+        updates.push(`active = $${paramCount}`);
+        values.push(active);
+        paramCount++;
       }
+
+      if (name !== undefined) {
+        updates.push(`name = $${paramCount}`);
+        values.push(name || null);
+        paramCount++;
+      }
+
+      if (description !== undefined) {
+        updates.push(`description = $${paramCount}`);
+        values.push(description || null);
+        paramCount++;
+      }
+
+      if (updates.length === 0) {
+        return json(400, { error: "Nenhum campo para atualizar fornecido" });
+      }
+
+      updates.push(`updated_at = NOW()`);
+      values.push(squadRoleId);
 
       // Get squad_id to verify access
       const squadRoleCheck = await query(
@@ -216,11 +248,11 @@ exports.handler = async (event) => {
       const result = await query(
         `
         UPDATE sv.squad_roles
-        SET active = $1, updated_at = NOW()
-        WHERE id = $2
+        SET ${updates.join(', ')}
+        WHERE id = $${paramCount}
         RETURNING *
         `,
-        [active, squadRoleId]
+        values
       );
 
       console.log("[squad-roles] Squad role atualizado:", squadRoleId);
