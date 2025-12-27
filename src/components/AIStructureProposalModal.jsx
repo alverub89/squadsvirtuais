@@ -7,12 +7,12 @@ export default function AIStructureProposalModal({ squadId, onClose, onConfirm }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [proposal, setProposal] = useState(null)
-  const [isEditing, setIsEditing] = useState(false)
   const [editedProposal, setEditedProposal] = useState(null)
   const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
     generateProposal()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [squadId, token])
 
   const generateProposal = async () => {
@@ -58,7 +58,7 @@ export default function AIStructureProposalModal({ squadId, onClose, onConfirm }
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            edited_proposal: isEditing ? editedProposal : null
+            edited_proposal: editedProposal
           })
         }
       )

@@ -148,7 +148,6 @@ async function generateProposal(event, userId) {
 
   // Call OpenAI
   let aiResponse;
-  let executionSuccess = true;
   let executionError = null;
 
   try {
@@ -242,7 +241,6 @@ async function generateProposal(event, userId) {
       },
     });
   } catch (error) {
-    executionSuccess = false;
     executionError = error.message;
 
     console.error("[ai-structure-proposal] Error generating proposal:", error.message);

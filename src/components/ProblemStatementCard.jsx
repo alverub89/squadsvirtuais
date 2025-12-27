@@ -82,6 +82,7 @@ export default function ProblemStatementCard({ squadId, onUpdate }) {
     if (squadId) {
       loadProblemStatement()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [squadId, token])
 
   const handleCreate = async () => {
