@@ -51,17 +51,19 @@ async function buildTimeline(squadId) {
   const hasIssues = parseInt(issuesResult.rows[0]?.count || 0) > 0;
   const hasDecisions = parseInt(decisionsResult.rows[0]?.count || 0) > 0;
 
-  // Define timeline items
+  // Define timeline items with descriptions
   const timelineItems = [
     {
       key: "problem",
       title: "Análise do Problema",
+      description: "A squad analisou o problema de negócio e identificou os principais requisitos.",
       state: "done", // Always done for now (future: check problem statement)
       relativeTime: "Há 2 dias",
     },
     {
       key: "personas",
       title: "Definição de Personas",
+      description: "Foram criadas 3 personas principais para validar as decisões do produto.",
       state: hasPersonas
         ? "done"
         : hasPhases || hasIssues || hasDecisions
@@ -72,6 +74,7 @@ async function buildTimeline(squadId) {
     {
       key: "backlog",
       title: "Estruturação do Backlog",
+      description: "Organizando as features em épicos e criando as primeiras user stories.",
       state: hasPhases
         ? "done"
         : hasIssues || hasDecisions
@@ -79,11 +82,12 @@ async function buildTimeline(squadId) {
           : hasPersonas
             ? "next"
             : "future",
-      relativeTime: hasPhases ? "Há 12 horas" : null,
+      relativeTime: hasPhases ? "Agora" : null,
     },
     {
       key: "issues",
       title: "Geração de Issues",
+      description: "Criar issues técnicas detalhadas para cada user story.",
       state: hasIssues
         ? "done"
         : hasDecisions
@@ -91,11 +95,12 @@ async function buildTimeline(squadId) {
           : hasPhases
             ? "next"
             : "future",
-      relativeTime: hasIssues ? "Há 6 horas" : null,
+      relativeTime: hasIssues ? null : "Próximo",
     },
     {
       key: "validation",
       title: "Validação Final",
+      description: "Revisão completa pela squad antes de enviar ao GitHub.",
       state: hasDecisions
         ? "done"
         : hasIssues
@@ -103,7 +108,7 @@ async function buildTimeline(squadId) {
           : hasPhases
             ? "next"
             : "future",
-      relativeTime: hasDecisions ? "Há 2 horas" : null,
+      relativeTime: hasDecisions ? null : "Futuro",
     },
   ];
 
@@ -234,7 +239,14 @@ exports.handler = async (event) => {
       // Generate initials from name (first 2 chars) or role_code as fallback
       let initials = "??";
       if (m.name) {
-        initials = m.name.substring(0, 2).toUpperCase();
+        const nameParts = m.name.trim().split(/\s+/);
+        if (nameParts.length >= 2) {
+          // Use first letter of first name and first letter of last name
+          initials = (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+        } else {
+          // Use first 2 letters of single name
+          initials = m.name.substring(0, 2).toUpperCase();
+        }
       } else if (m.role_code) {
         initials = m.role_code;
       }
@@ -244,6 +256,9 @@ exports.handler = async (event) => {
         name: m.name || m.email,
         role: m.role_label || "Membro",
         active: m.active,
+        // TODO: Implement real online status detection based on last activity
+        // For now showing all as online to match reference design
+        online: true,
       };
     });
 
@@ -270,6 +285,17 @@ exports.handler = async (event) => {
       relativeTime: getRelativeTime(d.created_at),
     }));
 
+    // Determine the next available phase (the one after current or first 'next')
+    let nextPhase = null;
+    const currentPhaseIndex = timeline.findIndex(item => item.state === 'current');
+    if (currentPhaseIndex >= 0) {
+      // If there's a current phase, show it as "próxima etapa" for user to advance
+      nextPhase = timeline[currentPhaseIndex];
+    } else {
+      // Otherwise find the first "next" phase
+      nextPhase = timeline.find(item => item.state === 'next');
+    }
+
     console.log("[squad-overview] Overview fetched successfully for squad:", squadId);
 
     return json(200, {
@@ -284,6 +310,10 @@ exports.handler = async (event) => {
       timeline,
       membersPreview,
       recentDecisions,
+      nextPhase: nextPhase ? {
+        title: nextPhase.title,
+        description: nextPhase.description,
+      } : null,
     });
   } catch (error) {
     console.error("[squad-overview] Erro:", error.message);
