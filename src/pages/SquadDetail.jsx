@@ -256,6 +256,7 @@ export default function SquadDetail() {
               {timeline.map((item, index) => (
                 <div key={item.key} className={`timeline-item timeline-${item.state}`}>
                   <div className="timeline-marker">
+                    {/* Using different markers for different states to match reference design */}
                     {item.state === 'done' && <span className="marker-done">✓</span>}
                     {item.state === 'current' && <span className="marker-current">▶</span>}
                     {(item.state === 'next' || item.state === 'future') && <span className="marker-pending">{index + 1}</span>}

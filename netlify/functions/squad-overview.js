@@ -256,7 +256,9 @@ exports.handler = async (event) => {
         name: m.name || m.email,
         role: m.role_label || "Membro",
         active: m.active,
-        online: true, // Placeholder - all members shown as online for now
+        // TODO: Implement real online status detection based on last activity
+        // For now showing all as online to match reference design
+        online: true,
       };
     });
 
@@ -283,11 +285,16 @@ exports.handler = async (event) => {
       relativeTime: getRelativeTime(d.created_at),
     }));
 
-    // Determine the next available phase
+    // Determine the next available phase (the one after current or first 'next')
+    let nextPhase = null;
     const currentPhaseIndex = timeline.findIndex(item => item.state === 'current');
-    const nextPhase = currentPhaseIndex >= 0 && currentPhaseIndex < timeline.length - 1 
-      ? timeline[currentPhaseIndex] 
-      : null;
+    if (currentPhaseIndex >= 0) {
+      // If there's a current phase, show it as "próxima etapa" for user to advance
+      nextPhase = timeline[currentPhaseIndex];
+    } else {
+      // Otherwise find the first "next" phase
+      nextPhase = timeline.find(item => item.state === 'next');
+    }
 
     console.log("[squad-overview] Overview fetched successfully for squad:", squadId);
 
