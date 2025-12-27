@@ -143,10 +143,6 @@
 }
 
 /* Persona card content */
-.persona-card-content {
-  /* Content is not clickable for now */
-}
-
 .persona-card-content h3 {
   margin: 0 0 8px 0;
   font-size: 18px;

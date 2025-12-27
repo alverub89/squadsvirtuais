@@ -227,7 +227,7 @@ export default function PersonasList() {
                   )}
 
                   {/* Show squad count if available */}
-                  {persona.squad_count > 0 && (
+                  {typeof persona.squad_count === 'number' && persona.squad_count > 0 && (
                     <div className="persona-squad-count">
                       Usado em {persona.squad_count} {persona.squad_count === 1 ? 'squad' : 'squads'}
                     </div>
