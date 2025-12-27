@@ -250,6 +250,28 @@
   color: white;
 }
 
+.persona-influence-section {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.persona-influence-section strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.influence-list {
+  list-style: disc;
+  margin: 0.5rem 0 0 1.5rem;
+  padding: 0;
+}
+
+.influence-list li {
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
 .btn-remove-persona {
   background: transparent;
   border: none;

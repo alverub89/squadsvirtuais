@@ -130,7 +130,7 @@ async function getSquadPersonas(event, userId) {
     return json(403, { error: "Acesso negado ao workspace" });
   }
   
-  // Get personas with association details
+  // Get personas with association details (including inactive ones)
   const result = await query(
     `
     SELECT 
@@ -145,11 +145,12 @@ async function getSquadPersonas(event, userId) {
       p.goals,
       p.pain_points,
       p.behaviors,
-      p.influence_level
+      p.influence_level,
+      p.active
     FROM sv.squad_personas sp
     JOIN sv.personas p ON sp.persona_id = p.id
-    WHERE sp.squad_id = $1 AND p.active = true
-    ORDER BY sp.created_at ASC
+    WHERE sp.squad_id = $1
+    ORDER BY p.active DESC, sp.created_at ASC
     `,
     [squadId]
   );

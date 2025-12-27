@@ -362,9 +362,20 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
                           </span>
                         )}
                         {persona.influence_level && (
-                          <span className="persona-influence-badge">
-                            Influência: {persona.influence_level}
-                          </span>
+                          <div className="persona-influence-section">
+                            <strong>Influência:</strong>
+                            {persona.influence_level.includes(',') ? (
+                              <ul className="influence-list">
+                                {persona.influence_level.split(',').map((item, idx) => (
+                                  <li key={idx}>{item.trim()}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <span className="persona-influence-badge">
+                                {persona.influence_level}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </>
