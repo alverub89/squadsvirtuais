@@ -63,7 +63,7 @@ VITE_GOOGLE_CLIENT_ID=123456789-abcdefghijk.apps.googleusercontent.com
 ```bash
 # Client ID e Secret do GitHub OAuth App
 GITHUB_CLIENT_ID=Iv1.abc123def456
-GITHUB_CLIENT_SECRET=abc123def456789...
+GITHUB_CLIENT_SECRETS_OAUTH=abc123def456789...
 ```
 
 **Como obter**:

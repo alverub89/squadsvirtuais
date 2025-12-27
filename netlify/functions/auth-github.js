@@ -3,7 +3,7 @@ const { query } = require("./_lib/db");
 const { signJwt } = require("./_lib/jwt");
 
 const githubClientId = process.env.GITHUB_CLIENT_ID;
-const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
+const githubClientSecret = process.env.GITHUB_CLIENT_SECRETS_OAUTH;
 const frontendUrl = process.env.FRONTEND_URL || "https://squadsvirtuais.com";
 
 function json(statusCode, body) {

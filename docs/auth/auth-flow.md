@@ -411,7 +411,7 @@ Resultado:
 
 - `VITE_GOOGLE_CLIENT_ID`: Client ID do Google (validação)
 - `GITHUB_CLIENT_ID`: Client ID do GitHub
-- `GITHUB_CLIENT_SECRET`: Client Secret do GitHub
+- `GITHUB_CLIENT_SECRETS_OAUTH`: Client Secret do GitHub
 - `FRONTEND_URL`: URL do frontend em produção
 - `JWT_SECRET`: Segredo para assinar JWT (32+ chars)
 - `JWT_EXPIRES_IN`: Expiração do JWT (padrão: "7d")

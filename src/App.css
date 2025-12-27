@@ -70,3 +70,45 @@ p {
     border-radius: 14px;
   }
 }
+
+/* Botão genérico */
+.btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  background: white;
+  color: #1f1f1f;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn:hover {
+  background: #f8f9fa;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.btn:active {
+  background: #f1f3f4;
+}
+
+.btn-github {
+  background: #24292f;
+  color: white;
+  border: 1px solid #24292f;
+}
+
+.btn-github:hover {
+  background: #2c3237;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+}
+
+.btn-github:active {
+  background: #1b1f23;
+}

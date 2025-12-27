@@ -122,7 +122,7 @@ The following environment variables must be configured in Netlify Dashboard:
 2. **GITHUB_CLIENT_ID** (new)
    - Get from: GitHub Settings > Developer settings > OAuth Apps
    
-3. **GITHUB_CLIENT_SECRET** (new, mark as secret)
+3. **GITHUB_CLIENT_SECRETS_OAUTH** (new, mark as secret)
    - Get from: GitHub Settings > Developer settings > OAuth Apps
    
 4. **FRONTEND_URL** (new, recommended)
