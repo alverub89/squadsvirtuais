@@ -36,7 +36,9 @@ async function buildTimeline(squadId) {
         [squadId]
       ),
       query(
-        `SELECT COUNT(*) as count FROM sv.personas WHERE squad_id = $1 AND active = true`,
+        `SELECT COUNT(*) as count FROM sv.squad_personas sp 
+         JOIN sv.personas p ON sp.persona_id = p.id 
+         WHERE sp.squad_id = $1 AND p.active = true`,
         [squadId]
       ),
       query(`SELECT COUNT(*) as count FROM sv.phases WHERE squad_id = $1`, [

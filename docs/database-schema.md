@@ -152,24 +152,61 @@ CREATE INDEX IF NOT EXISTS idx_issues_squad
 ```
 
 ### sv.personas
-Personas defined for the squad.
+Personas defined at the workspace level. Personas represent customers, stakeholders, or squad members and can be associated with multiple squads with different contexts.
+
+**Type values:**
+- `cliente` - Customer persona
+- `stakeholder` - Stakeholder persona
+- `membro_squad` - Squad member persona
 
 ```sql
 CREATE TABLE IF NOT EXISTS sv.personas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  workspace_id UUID NOT NULL REFERENCES sv.workspaces(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  description TEXT,
+  type TEXT NOT NULL,
+  subtype TEXT,
+  goals TEXT,
+  pain_points TEXT,
+  behaviors TEXT,
+  influence_level TEXT,
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT personas_type_check 
+    CHECK (type IN ('cliente', 'stakeholder', 'membro_squad'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_personas_squad 
-  ON sv.personas(squad_id);
+CREATE INDEX IF NOT EXISTS idx_personas_workspace 
+  ON sv.personas(workspace_id);
 
 CREATE INDEX IF NOT EXISTS idx_personas_active 
-  ON sv.personas(squad_id, active);
+  ON sv.personas(workspace_id, active);
+```
+
+### sv.squad_personas
+Association table linking personas to squads with contextual information.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.squad_personas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  persona_id UUID NOT NULL REFERENCES sv.personas(id) ON DELETE CASCADE,
+  context_description TEXT,
+  focus TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT squad_personas_unique 
+    UNIQUE (squad_id, persona_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_squad_personas_squad 
+  ON sv.squad_personas(squad_id);
+
+CREATE INDEX IF NOT EXISTS idx_squad_personas_persona 
+  ON sv.squad_personas(persona_id);
 ```
 
 ### sv.decisions
@@ -279,15 +316,19 @@ users (1) ─────< (N) user_identities
          │       │                    │
          │       ├─< (N) phases       │
          │       ├─< (N) issues       │
-         │       ├─< (N) personas     │
          │       ├─< (N) decisions    │
-         │       └─< (N) squad_members >─┐
-         │                            │   │
-         │ connections                │   │
-         ├─< (N) github_connections   │   │
-         └─< (N) repo_connections     │   │
-                                      │   │
-users (N) ────────────────────────────┴───┘
+         │       ├─< (N) squad_members >─┐
+         │       │                       │
+         │       └─< (N) squad_personas  │
+         │                   │           │
+         │ personas                      │
+         ├─< (N) personas ───────────────┘
+         │                   
+         │ connections                
+         ├─< (N) github_connections   
+         └─< (N) repo_connections     
+                                       
+users (N) ──────────────────────────────┘
 ```
 
 ## Key Constraints

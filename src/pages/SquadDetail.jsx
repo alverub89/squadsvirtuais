@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/Layout'
 import ProblemStatementCard from '../components/ProblemStatementCard'
+import PersonaCard from '../components/PersonaCard'
 import './SquadDetail.css'
 
 export default function SquadDetail() {
@@ -267,6 +268,13 @@ export default function SquadDetail() {
         {/* Problem Statement Card */}
         <ProblemStatementCard 
           squadId={squadId} 
+          onUpdate={loadSquadOverview}
+        />
+
+        {/* Personas Card */}
+        <PersonaCard 
+          squadId={squadId}
+          workspaceId={workspaceId}
           onUpdate={loadSquadOverview}
         />
 
