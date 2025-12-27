@@ -1,5 +1,4 @@
-// PersonaCard.jsx - Component for displaying squad personas
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import './PersonaCard.css'
 
@@ -16,7 +15,7 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
   })
 
   // Load squad personas
-  const loadSquadPersonas = async () => {
+  const loadSquadPersonas = useCallback(async () => {
     try {
       setLoading(true)
       const res = await fetch(
@@ -39,7 +38,7 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [squadId, token])
 
   // Load available workspace personas
   const loadAvailablePersonas = async () => {
@@ -58,9 +57,9 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
       }
 
       const data = await res.json()
-      // Filter out personas already in this squad
-      const squadPersonaIds = personas.map(p => p.persona_id)
-      const available = data.personas.filter(p => !squadPersonaIds.includes(p.id))
+      // Filter out personas already in this squad using Set for O(1) lookups
+      const squadPersonaIds = new Set(personas.map(p => p.persona_id))
+      const available = data.personas.filter(p => !squadPersonaIds.has(p.id))
       setAvailablePersonas(available)
     } catch (err) {
       console.error('Error loading available personas:', err)
@@ -140,8 +139,7 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
   // Initialize
   useEffect(() => {
     loadSquadPersonas()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [squadId, token])
+  }, [loadSquadPersonas])
 
   if (loading && personas.length === 0) {
     return (
