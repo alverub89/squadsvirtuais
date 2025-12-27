@@ -33,7 +33,7 @@ exports.handler = async (event) => {
 
     const { rows } = await query(
       `
-      SELECT id, name, email, avatar_url, last_login_at
+      SELECT id, name, email, avatar_url
       FROM sv.users
       WHERE id = $1
       `,

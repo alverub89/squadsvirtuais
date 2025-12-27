@@ -1,0 +1,112 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #ffffff;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 32px;
+  background: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.login-card h1 {
+  font-size: 20px;
+  margin: 0;
+  color: #0f172a;
+}
+
+.login-card p {
+  margin: 4px 0 0 0;
+  opacity: 0.7;
+  font-size: 14px;
+  color: #475569;
+}
+
+.error-message {
+  background-color: #fee;
+  border: 1px solid #c33;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+  color: #c33;
+  font-size: 14px;
+}
+
+.actions {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.actions > div {
+  width: 100%;
+}
+
+.actions iframe {
+  width: 100% !important;
+}
+
+.btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-github {
+  background: #24292e;
+  color: #ffffff;
+  border: 1px solid #24292e;
+}
+
+.btn-github:hover {
+  background: #1a1e21;
+}
+
+.hint {
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 20px;
+}
+
+@media (max-width: 520px) {
+  .login-page {
+    padding: 16px;
+  }
+  
+  .login-card {
+    padding: 24px;
+    border-radius: 12px;
+  }
+}

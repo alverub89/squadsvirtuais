@@ -1,0 +1,37 @@
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState } from 'react'
+
+const WorkspaceContext = createContext(null)
+
+export function WorkspaceProvider({ children }) {
+  const [activeWorkspace, setActiveWorkspace] = useState(null)
+
+  const selectWorkspace = (workspace) => {
+    setActiveWorkspace(workspace)
+    // Store in sessionStorage for persistence during navigation
+    if (workspace) {
+      sessionStorage.setItem('activeWorkspace', JSON.stringify(workspace))
+    } else {
+      sessionStorage.removeItem('activeWorkspace')
+    }
+  }
+
+  const clearWorkspace = () => {
+    setActiveWorkspace(null)
+    sessionStorage.removeItem('activeWorkspace')
+  }
+
+  return (
+    <WorkspaceContext.Provider value={{ activeWorkspace, selectWorkspace, clearWorkspace }}>
+      {children}
+    </WorkspaceContext.Provider>
+  )
+}
+
+export function useWorkspace() {
+  const context = useContext(WorkspaceContext)
+  if (!context) {
+    throw new Error('useWorkspace must be used within WorkspaceProvider')
+  }
+  return context
+}
