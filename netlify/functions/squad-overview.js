@@ -272,27 +272,49 @@ exports.handler = async (event) => {
     });
 
     // Get recent decisions (last 5)
+    // Sort by updated_at DESC, then created_at DESC
     const decisionsResult = await query(
       `
       SELECT 
         title,
         decision,
         created_by_role,
-        created_at
+        created_at,
+        updated_at
       FROM sv.decisions
       WHERE squad_id = $1
-      ORDER BY created_at DESC
+      ORDER BY updated_at DESC, created_at DESC
       LIMIT 5
       `,
       [squadId]
     );
 
-    const recentDecisions = decisionsResult.rows.map((d) => ({
-      title: d.title,
-      summary: d.decision,
-      role: d.created_by_role || "Squad",
-      relativeTime: getRelativeTime(d.created_at),
-    }));
+    const recentDecisions = decisionsResult.rows.map((d) => {
+      let title = d.title;
+      let summary = "";
+      
+      // Try to parse JSON decision and extract relevant data
+      try {
+        const decisionData = JSON.parse(d.decision);
+        // If it's a JSON object, extract title and narrative/summary
+        if (typeof decisionData === 'object' && decisionData !== null) {
+          title = decisionData.title || d.title;
+          summary = decisionData.narrative || decisionData.summary || "";
+        } else {
+          summary = d.decision;
+        }
+      } catch {
+        // Not JSON, use as-is
+        summary = d.decision;
+      }
+      
+      return {
+        title: title,
+        summary: summary,
+        role: d.created_by_role || "Squad",
+        relativeTime: getRelativeTime(d.updated_at || d.created_at),
+      };
+    });
 
     // Determine the next available phase (the one after current or first 'next')
     let nextPhase = null;

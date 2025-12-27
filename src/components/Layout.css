@@ -348,8 +348,24 @@
   min-width: 80px;
 }
 
-.nav-item:hover {
+.nav-item:hover:not(:disabled):not(.nav-item-disabled) {
   color: #3b82f6;
+}
+
+.nav-item.active {
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.nav-item:disabled,
+.nav-item.nav-item-disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.nav-item:disabled svg,
+.nav-item.nav-item-disabled svg {
+  color: #cbd5e1;
 }
 
 .nav-item svg {
