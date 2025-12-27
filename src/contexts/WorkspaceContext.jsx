@@ -4,7 +4,21 @@ import { createContext, useContext, useState } from 'react'
 const WorkspaceContext = createContext(null)
 
 export function WorkspaceProvider({ children }) {
-  const [activeWorkspace, setActiveWorkspace] = useState(null)
+  const [activeWorkspace, setActiveWorkspace] = useState(() => {
+    // Initialize from sessionStorage if available
+    const stored = sessionStorage.getItem('activeWorkspace')
+    if (stored) {
+      try {
+        return JSON.parse(stored)
+      } catch (e) {
+        console.error('Error parsing stored workspace:', e)
+        // Clear corrupted data to prevent repeated parsing attempts
+        sessionStorage.removeItem('activeWorkspace')
+        return null
+      }
+    }
+    return null
+  })
 
   const selectWorkspace = (workspace) => {
     setActiveWorkspace(workspace)
