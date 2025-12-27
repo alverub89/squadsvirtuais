@@ -43,9 +43,16 @@ Este documento descreve as decisões arquiteturais do projeto Squads Virtuais.
 │        Netlify Functions (Backend)          │
 │  - auth-google.js: Google OAuth handler     │
 │  - auth-github.js: GitHub OAuth handler     │
+│  - auth-github-start.js: Start GitHub OAuth │
+│  - auth-github-callback.js: OAuth callback  │
+│  - github-repos.js: List repositories       │
+│  - github-repos-connect.js: Connect repo    │
 │  - me.js: Get current user info             │
 │  - _lib/db.js: Database connection          │
 │  - _lib/jwt.js: JWT utilities               │
+│  - _lib/auth.js: Authentication helpers     │
+│  - _lib/github-api.js: GitHub API client    │
+│  - _lib/response.js: Response helpers       │
 └─────────────────┬───────────────────────────┘
                   │
                   │ PostgreSQL Protocol
@@ -53,7 +60,8 @@ Este documento descreve as decisões arquiteturais do projeto Squads Virtuais.
 ┌─────────────────▼───────────────────────────┐
 │          PostgreSQL Database                │
 │  - Schema: sv                               │
-│  - Tables: users, user_identities           │
+│  - Tables: users, user_identities,          │
+│    github_connections, repo_connections     │
 └─────────────────────────────────────────────┘
 ```
 
@@ -201,12 +209,43 @@ if (token) {
 ```
 netlify/functions/
 ├── _lib/
-│   ├── db.js      # Database connection pool
-│   └── jwt.js     # JWT sign/verify utilities
+│   ├── db.js           # Database connection pool
+│   ├── jwt.js          # JWT sign/verify utilities
+│   ├── auth.js         # Authentication helpers
+│   ├── github-api.js   # GitHub API client
+│   └── response.js     # Response helpers
 ├── auth-google.js
 ├── auth-github.js
+├── auth-github-start.js
+├── auth-github-callback.js
+├── github-repos.js
+├── github-repos-connect.js
 └── me.js
 ```
+
+### 9. GitHub Integration com Workspaces
+
+**Decisão**: Implementar OAuth GitHub vinculado a workspaces ao invés de usuários
+
+**Razões**:
+- Permite múltiplas conexões GitHub (uma por workspace)
+- Tokens OAuth isolados por workspace
+- Facilita gerenciamento de permissões em nível de workspace
+- Repositórios conectados ficam vinculados ao workspace
+
+**Implementação**:
+- Tabela `github_connections`: armazena conexão OAuth por workspace
+- Tabela `repo_connections`: armazena repositórios conectados ao workspace
+- OAuth flow mantém contexto do workspace via state parameter
+- Tokens nunca expostos ao frontend (apenas no backend)
+
+**Fluxo**:
+1. Frontend inicia OAuth passando `workspace_id`
+2. Backend gera URL OAuth com `state` contendo `workspace_id`
+3. Usuário autoriza no GitHub
+4. Callback recebe código e extrai `workspace_id` do state
+5. Backend troca código por token e persiste em `github_connections`
+6. Workspace agora pode listar e conectar repositórios
 
 ---
 

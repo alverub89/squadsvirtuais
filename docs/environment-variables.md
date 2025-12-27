@@ -34,14 +34,20 @@ Este documento lista todas as variáveis de ambiente necessárias para o projeto
 - **Tipo**: String
 - **Exemplo**: `Iv1.abc123def456789`
 - **Onde obter**: [GitHub Developer Settings](https://github.com/settings/developers) > OAuth Apps
-- **Usado em**: `netlify/functions/auth-github.js`
+- **Usado em**: 
+  - `netlify/functions/auth-github.js` (login de usuário)
+  - `netlify/functions/auth-github-start.js` (conexão de workspace)
+  - `netlify/functions/auth-github-callback.js` (callback OAuth)
+- **Nota**: OAuth App precisa ter scope `repo` para integração de repositórios
 
 #### `GITHUB_CLIENT_SECRET`
 - **Descrição**: Client Secret do GitHub OAuth App
 - **Tipo**: String (sensível)
 - **Exemplo**: `abcdef1234567890abcdef1234567890abcdef12`
 - **Onde obter**: [GitHub Developer Settings](https://github.com/settings/developers) > OAuth Apps
-- **Usado em**: `netlify/functions/auth-github.js`
+- **Usado em**: 
+  - `netlify/functions/auth-github.js` (login de usuário)
+  - `netlify/functions/auth-github-callback.js` (callback OAuth)
 - **⚠️ CRÍTICO**: Nunca expor no frontend ou commitar no Git
 
 #### `FRONTEND_URL`
@@ -49,7 +55,10 @@ Este documento lista todas as variáveis de ambiente necessárias para o projeto
 - **Tipo**: String (URL)
 - **Exemplo**: `https://squadsvirtuais.com`
 - **Padrão**: `https://squadsvirtuais.com` (se não definido)
-- **Usado em**: `netlify/functions/auth-github.js`
+- **Usado em**: 
+  - `netlify/functions/auth-github.js` (login de usuário)
+  - `netlify/functions/auth-github-start.js` (início OAuth workspace)
+  - `netlify/functions/auth-github-callback.js` (redirect pós-OAuth)
 - **Importante**: Usado para redirect após OAuth. Deve ser HTTPS em produção.
 
 #### `JWT_SECRET`
