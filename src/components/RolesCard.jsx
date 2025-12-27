@@ -80,10 +80,13 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
     try {
       setAdding(role.id)
       
+      // Ensure role has a valid source property, default to 'global' if missing
+      const roleSource = role.source || 'global'
+      
       const body = {
         squad_id: squadId,
-        role_id: role.source === 'global' ? role.id : null,
-        workspace_role_id: role.source === 'workspace' ? role.id : null
+        role_id: roleSource === 'global' ? role.id : null,
+        workspace_role_id: roleSource === 'workspace' ? role.id : null
       }
 
       const res = await fetch('/.netlify/functions/squad-roles', {
@@ -107,6 +110,7 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
       await loadAvailableRoles()
     } catch (err) {
       console.error('Error adding role:', err)
+      // Note: Using alert() temporarily. Consider implementing a toast notification system.
       alert(err.message || 'Erro ao adicionar role')
     } finally {
       setAdding(null)
