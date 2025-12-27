@@ -1,5 +1,5 @@
 // PersonaCard.jsx - Component for displaying squad personas
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import './PersonaCard.css'
 
@@ -138,7 +138,7 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
   }
 
   // Initialize
-  useState(() => {
+  useEffect(() => {
     loadSquadPersonas()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [squadId, token])
