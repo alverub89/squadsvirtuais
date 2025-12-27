@@ -6,7 +6,7 @@ const { json, redirect } = require("./_lib/response");
 const { exchangeCodeForToken, getGithubUser, getGithubUserEmail } = require("./_lib/github-api");
 
 const githubClientId = process.env.GITHUB_CLIENT_ID;
-const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
+const githubClientSecret = process.env.GITHUB_CLIENT_SECRETS_OAUTH;
 const frontendUrl = process.env.FRONTEND_URL || "https://squadsvirtuais.com";
 
 exports.handler = async (event) => {
