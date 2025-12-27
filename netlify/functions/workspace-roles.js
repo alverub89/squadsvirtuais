@@ -165,6 +165,75 @@ exports.handler = async (event) => {
       });
     }
 
+    // Handle DELETE (soft delete by setting active = false)
+    if (event.httpMethod === "DELETE") {
+      console.log("[workspace-roles] Excluindo workspace role (soft delete)");
+
+      // Try to get role ID from path
+      const pathParts = event.path.split('/');
+      const roleIdFromPath = pathParts[pathParts.length - 1];
+      
+      const body = event.body ? JSON.parse(event.body) : {};
+      const { role_id } = body;
+
+      // Use path ID if it's a valid UUID, otherwise use body ID
+      const roleId = roleIdFromPath && roleIdFromPath.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) 
+        ? roleIdFromPath 
+        : role_id;
+
+      if (!roleId) {
+        return json(400, { error: "Role ID é obrigatório" });
+      }
+
+      // Get workspace role to verify ownership
+      const roleCheck = await query(
+        `
+        SELECT wr.workspace_id
+        FROM sv.workspace_roles wr
+        WHERE wr.id = $1
+        `,
+        [roleId]
+      );
+
+      if (roleCheck.rows.length === 0) {
+        return json(404, { error: "Role não encontrado" });
+      }
+
+      const workspaceId = roleCheck.rows[0].workspace_id;
+
+      // Verify user is member of workspace
+      const memberCheck = await query(
+        `
+        SELECT 1 FROM sv.workspace_members
+        WHERE workspace_id = $1 AND user_id = $2
+        `,
+        [workspaceId, userId]
+      );
+
+      if (memberCheck.rows.length === 0) {
+        console.log("[workspace-roles] Usuário não é membro do workspace");
+        return json(403, { error: "Acesso negado ao workspace" });
+      }
+
+      // Soft delete by setting active = false
+      const result = await query(
+        `
+        UPDATE sv.workspace_roles
+        SET active = false, updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+        `,
+        [roleId]
+      );
+
+      console.log("[workspace-roles] Workspace role excluído:", roleId);
+
+      return json(200, {
+        ok: true,
+        role: result.rows[0]
+      });
+    }
+
     // Method not allowed
     return json(405, { error: "Método não permitido" });
 

@@ -175,12 +175,10 @@ export default function WorkspaceRoles() {
       setDeleting(role.id)
       
       const res = await fetch(`/.netlify/functions/workspace-roles/${role.id}`, {
-        method: 'PATCH',
+        method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ active: false })
+          'Authorization': `Bearer ${token}`
+        }
       })
 
       if (!res.ok) {
