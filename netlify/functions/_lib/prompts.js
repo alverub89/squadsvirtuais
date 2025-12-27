@@ -66,6 +66,12 @@ function renderPrompt(template, variables) {
     return variables[varName] ? content : "";
   });
 
+  // Check for any remaining unresolved variables and log warning
+  const unresolvedMatches = rendered.match(/{{[^}]+}}/g);
+  if (unresolvedMatches && unresolvedMatches.length > 0) {
+    console.warn("[prompts] Unresolved template variables:", unresolvedMatches.join(", "));
+  }
+
   // Remove any remaining unresolved variables
   rendered = rendered.replace(/{{[^}]+}}/g, "");
 

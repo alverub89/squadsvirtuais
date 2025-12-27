@@ -161,7 +161,13 @@ async function generateProposal(event, userId) {
     });
 
     // Parse the JSON response
-    const parsedResponse = JSON.parse(aiResponse.content);
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(aiResponse.content);
+    } catch (parseError) {
+      console.error("[ai-structure-proposal] Failed to parse AI response:", parseError.message);
+      throw new Error("A IA retornou uma resposta inválida. Por favor, tente novamente.");
+    }
 
     // Check if AI needs clarification
     if (parsedResponse.needs_clarification) {

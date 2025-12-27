@@ -3,8 +3,8 @@ const OpenAI = require("openai");
 
 // Validate OpenAI API key
 if (!process.env.OPENAI_API_KEY) {
-  console.error("[openai] OPENAI_API_KEY não configurado");
-  throw new Error("OPENAI_API_KEY não configurado");
+  console.error("[openai] OpenAI API configuration is missing");
+  throw new Error("OpenAI API configuration is missing");
 }
 
 const openai = new OpenAI({
