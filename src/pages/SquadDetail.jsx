@@ -146,7 +146,17 @@ export default function SquadDetail() {
     return null
   }
 
-  const { squad, counts, timeline, membersPreview, recentDecisions } = squadData
+  const { squad, counts, timeline, membersPreview, recentDecisions, nextPhase } = squadData
+  
+  // Map status to display labels
+  const statusLabels = {
+    'rascunho': 'Rascunho',
+    'ativa': 'Ativa',
+    'aguardando_execucao': 'Aguardando Execução',
+    'em_revisao': 'Em Revisão',
+    'concluida': 'Concluída',
+    'pausada': 'Pausada'
+  }
 
   return (
     <Layout>
@@ -160,16 +170,23 @@ export default function SquadDetail() {
             ← Voltar
           </button>
           <div className="squad-title-section">
-            {isEditing ? (
-              <input
-                type="text"
-                className="edit-title-input"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              />
-            ) : (
-              <h1>{squad.name}</h1>
-            )}
+            <div className="title-with-badge">
+              {isEditing ? (
+                <input
+                  type="text"
+                  className="edit-title-input"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                />
+              ) : (
+                <>
+                  <h1>{squad.name}</h1>
+                  <span className={`status-badge status-${squad.status}`}>
+                    {statusLabels[squad.status] || squad.status}
+                  </span>
+                </>
+              )}
+            </div>
             {isEditing ? (
               <textarea
                 className="edit-description-input"
@@ -208,24 +225,24 @@ export default function SquadDetail() {
         {/* Indicator Cards */}
         <div className="indicators-grid">
           <div className="indicator-card">
-            <div className="indicator-icon issues-icon">📋</div>
-            <div className="indicator-content">
-              <div className="indicator-value">{counts.issues}</div>
-              <div className="indicator-label">Issues</div>
-            </div>
-          </div>
-          <div className="indicator-card">
-            <div className="indicator-icon phases-icon">📊</div>
-            <div className="indicator-content">
-              <div className="indicator-value">{counts.phase.current}/{counts.phase.total}</div>
-              <div className="indicator-label">Etapas</div>
-            </div>
-          </div>
-          <div className="indicator-card">
             <div className="indicator-icon members-icon">👥</div>
             <div className="indicator-content">
-              <div className="indicator-value">{counts.members}</div>
               <div className="indicator-label">Membros</div>
+              <div className="indicator-value">{counts.members}</div>
+            </div>
+          </div>
+          <div className="indicator-card">
+            <div className="indicator-icon issues-icon">📋</div>
+            <div className="indicator-content">
+              <div className="indicator-label">Issues</div>
+              <div className="indicator-value">{counts.issues}</div>
+            </div>
+          </div>
+          <div className="indicator-card">
+            <div className="indicator-icon phases-icon">⏱️</div>
+            <div className="indicator-content">
+              <div className="indicator-label">Etapa</div>
+              <div className="indicator-value">{counts.phase.current}/{counts.phase.total}</div>
             </div>
           </div>
         </div>
@@ -240,13 +257,18 @@ export default function SquadDetail() {
                 <div key={item.key} className={`timeline-item timeline-${item.state}`}>
                   <div className="timeline-marker">
                     {item.state === 'done' && <span className="marker-done">✓</span>}
-                    {item.state === 'current' && <span className="marker-current">{index + 1}</span>}
+                    {item.state === 'current' && <span className="marker-current">▶</span>}
                     {(item.state === 'next' || item.state === 'future') && <span className="marker-pending">{index + 1}</span>}
                   </div>
                   <div className="timeline-content">
-                    <div className="timeline-title">{item.title}</div>
-                    {item.relativeTime && (
-                      <div className="timeline-time">{item.relativeTime}</div>
+                    <div className="timeline-header">
+                      <div className="timeline-title">{item.title}</div>
+                      {item.relativeTime && (
+                        <div className="timeline-time">{item.relativeTime}</div>
+                      )}
+                    </div>
+                    {item.description && (
+                      <div className="timeline-description">{item.description}</div>
                     )}
                   </div>
                 </div>
@@ -256,6 +278,34 @@ export default function SquadDetail() {
 
           {/* Sidebar */}
           <div className="sidebar">
+            {/* Members Card */}
+            <div className="sidebar-card">
+              <div className="sidebar-card-header">
+                <h3>Membros da Squad</h3>
+                {counts.members > 0 && (
+                  <button className="btn-link">Ver todos →</button>
+                )}
+              </div>
+              {membersPreview.length === 0 ? (
+                <p className="empty-text">Nenhum membro atribuído</p>
+              ) : (
+                <div className="members-list">
+                  {membersPreview.map((member, index) => (
+                    <div key={index} className="member-item">
+                      <div className="member-avatar-wrapper">
+                        <div className="member-avatar">{member.initials}</div>
+                        {member.online && <div className="member-status-indicator"></div>}
+                      </div>
+                      <div className="member-info">
+                        <div className="member-name">{member.name}</div>
+                        <div className="member-role">{member.role}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Decisions Card */}
             <div className="sidebar-card">
               <h3>Decisões Recentes</h3>
@@ -265,44 +315,35 @@ export default function SquadDetail() {
                 <div className="decisions-list">
                   {recentDecisions.map((decision, index) => (
                     <div key={index} className="decision-item">
-                      <div className="decision-title">{decision.title}</div>
-                      <div className="decision-summary">{decision.summary}</div>
-                      <div className="decision-meta">
-                        <span className="decision-role">{decision.role}</span>
-                        <span className="decision-time">{decision.relativeTime}</span>
+                      <div className="decision-icon">💬</div>
+                      <div className="decision-content">
+                        <div className="decision-title">{decision.title}</div>
+                        <div className="decision-summary">{decision.summary}</div>
+                        <div className="decision-meta">
+                          <span className="decision-role">{decision.role}</span>
+                          <span className="decision-time">{decision.relativeTime}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
-            </div>
-
-            {/* Members Card */}
-            <div className="sidebar-card">
-              <h3>Membros da Squad</h3>
-              {membersPreview.length === 0 ? (
-                <p className="empty-text">Nenhum membro atribuído</p>
-              ) : (
-                <div className="members-list">
-                  {membersPreview.map((member, index) => (
-                    <div key={index} className="member-item">
-                      <div className="member-avatar">{member.initials}</div>
-                      <div className="member-info">
-                        <div className="member-name">{member.name}</div>
-                        <div className="member-role">{member.role}</div>
-                      </div>
-                    </div>
-                  ))}
-                  {counts.members > 3 && (
-                    <div className="members-more">
-                      +{counts.members - 3} mais {counts.members - 3 === 1 ? 'membro' : 'membros'}
-                    </div>
-                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
+
+        {/* Next Phase Card */}
+        {nextPhase && (
+          <div className="next-phase-card">
+            <div className="next-phase-content">
+              <h3>Próxima etapa disponível</h3>
+              <p>{nextPhase.description}</p>
+            </div>
+            <button className="btn btn-primary btn-advance">
+              ▶ Avançar
+            </button>
+          </div>
+        )}
       </div>
     </Layout>
   )
