@@ -18,7 +18,7 @@ export default function SquadDetail() {
     try {
       setLoading(true)
       const res = await fetch(
-        `/.netlify/functions/squads/${squadId}/overview`,
+        `/.netlify/functions/squad-overview?id=${squadId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -59,7 +59,7 @@ export default function SquadDetail() {
 
     try {
       const res = await fetch(
-        `/.netlify/functions/squads/${squadId}`,
+        `/.netlify/functions/squads-detail?id=${squadId}`,
         {
           method: 'PATCH',
           headers: {
@@ -89,7 +89,7 @@ export default function SquadDetail() {
 
     try {
       const res = await fetch(
-        `/.netlify/functions/squads/${squadId}`,
+        `/.netlify/functions/squads-detail?id=${squadId}`,
         {
           method: 'DELETE',
           headers: {
