@@ -42,11 +42,11 @@ exports.handler = async (event) => {
     // Create workspace
     const workspaceResult = await query(
       `
-      INSERT INTO sv.workspaces (name, description, type)
-      VALUES ($1, $2, $3)
-      RETURNING id, name, description, type
+      INSERT INTO sv.workspaces (name, description, type, owner_user_id)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, name, description, type, owner_user_id
       `,
-      [name.trim(), description?.trim() || null, type?.trim() || null]
+      [name.trim(), description?.trim() || null, type?.trim() || null, userId]
     );
 
     const workspace = workspaceResult.rows[0];
