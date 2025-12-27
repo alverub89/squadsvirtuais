@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/Layout'
@@ -13,7 +13,7 @@ export default function PersonasList() {
   const [error, setError] = useState(null)
   const [activeFilter, setActiveFilter] = useState('todos')
 
-  const loadPersonas = async () => {
+  const loadPersonas = useCallback(async () => {
     try {
       setLoading(true)
       const res = await fetch(
@@ -40,7 +40,7 @@ export default function PersonasList() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [workspaceId, token])
 
   useEffect(() => {
     // If no workspace ID in URL, redirect to workspaces list
@@ -50,8 +50,7 @@ export default function PersonasList() {
     }
 
     loadPersonas()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId, token, navigate])
+  }, [workspaceId, navigate, loadPersonas])
 
   // Toggle persona active state
   const handleTogglePersona = async (personaId, currentActive) => {
