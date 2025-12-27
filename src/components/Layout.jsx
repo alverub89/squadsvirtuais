@@ -60,7 +60,7 @@ export default function Layout({ children }) {
                     </svg>
                     Trocar workspace
                   </button>
-                  <button onClick={handleWorkspaceSwitch} className="workspace-menu-item">
+                  <button className="workspace-menu-item" disabled>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="3" />
                       <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24" />
@@ -111,7 +111,7 @@ export default function Layout({ children }) {
             <nav className="sidebar-menu">
               <button 
                 className="sidebar-item"
-                onClick={() => navigate('/')}
+                onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -128,21 +128,21 @@ export default function Layout({ children }) {
                 </svg>
                 Squads
               </button>
-              <button className="sidebar-item">
+              <button className="sidebar-item sidebar-item-disabled" disabled>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                   <circle cx="12" cy="7" r="4" />
                 </svg>
                 Personas
               </button>
-              <button className="sidebar-item">
+              <button className="sidebar-item sidebar-item-disabled" disabled>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="18" height="18" rx="2" />
                   <path d="M9 3v18" />
                 </svg>
                 Backlog
               </button>
-              <button className="sidebar-item">
+              <button className="sidebar-item sidebar-item-disabled" disabled>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
@@ -151,7 +151,7 @@ export default function Layout({ children }) {
               </button>
             </nav>
             <div className="sidebar-footer">
-              <button className="sidebar-item">
+              <button className="sidebar-item sidebar-item-disabled" disabled>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="3" />
                   <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24" />

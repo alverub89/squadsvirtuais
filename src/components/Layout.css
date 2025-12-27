@@ -107,12 +107,21 @@
   text-align: left;
 }
 
-.workspace-menu-item:hover {
+.workspace-menu-item:hover:not(:disabled) {
   background: #f8fafc;
+}
+
+.workspace-menu-item:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
 }
 
 .workspace-menu-item svg {
   color: #64748b;
+}
+
+.workspace-menu-item:disabled svg {
+  color: #cbd5e1;
 }
 
 .header-actions {
@@ -199,7 +208,7 @@
   text-align: left;
 }
 
-.sidebar-item:hover {
+.sidebar-item:hover:not(:disabled) {
   background: #f1f5f9;
   color: #0f172a;
 }
@@ -207,6 +216,17 @@
 .sidebar-item.active {
   background: #e0f2fe;
   color: #0369a1;
+}
+
+.sidebar-item:disabled,
+.sidebar-item-disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.sidebar-item:disabled svg,
+.sidebar-item-disabled svg {
+  color: #cbd5e1;
 }
 
 .sidebar-item svg {
