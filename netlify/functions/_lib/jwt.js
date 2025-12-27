@@ -25,4 +25,23 @@ function signJwt(payload) {
   }
 }
 
-module.exports = { signJwt };
+function verifyJwt(token) {
+  if (!secret) {
+    console.error("[jwt] JWT_SECRET não configurado");
+    throw new Error("JWT_SECRET ausente");
+  }
+  
+  if (!token) {
+    throw new Error("Token ausente");
+  }
+  
+  try {
+    const decoded = jwt.verify(token, secret);
+    return decoded;
+  } catch (error) {
+    console.error("[jwt] Erro ao verificar JWT:", error.message);
+    throw error;
+  }
+}
+
+module.exports = { signJwt, verifyJwt };
