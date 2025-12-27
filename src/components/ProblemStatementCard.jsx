@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import AIStructureProposalModal from './AIStructureProposalModal'
 import './ProblemStatementCard.css'
 
 export default function ProblemStatementCard({ squadId, onUpdate }) {
@@ -9,6 +10,7 @@ export default function ProblemStatementCard({ squadId, onUpdate }) {
   const [isEditing, setIsEditing] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [history, setHistory] = useState([])
+  const [showAIProposal, setShowAIProposal] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     narrative: '',
@@ -407,6 +409,50 @@ export default function ProblemStatementCard({ squadId, onUpdate }) {
         </div>
       )}
 
+      {/* AI Proposal CTA */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+        borderRadius: '8px', 
+        padding: '16px',
+        marginTop: '16px',
+        color: 'white'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '20px' }}>✨</span>
+              <strong style={{ fontSize: '16px' }}>Gerar Proposta de Estrutura com IA</strong>
+            </div>
+            <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>
+              A IA pode sugerir um roteiro de trabalho, papéis e personas baseados neste problema
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAIProposal(true)}
+            style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              padding: '10px 20px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.3)'
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.2)'
+            }}
+          >
+            Gerar com IA
+          </button>
+        </div>
+      </div>
+
       {/* Meta info */}
       <div className="problem-statement-meta">
         <span>
@@ -446,6 +492,18 @@ export default function ProblemStatementCard({ squadId, onUpdate }) {
             </div>
           )}
         </div>
+      )}
+
+      {/* AI Structure Proposal Modal */}
+      {showAIProposal && (
+        <AIStructureProposalModal
+          squadId={squadId}
+          onClose={() => setShowAIProposal(false)}
+          onConfirm={() => {
+            setShowAIProposal(false)
+            if (onUpdate) onUpdate()
+          }}
+        />
       )}
     </div>
   )
