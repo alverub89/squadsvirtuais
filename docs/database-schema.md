@@ -437,6 +437,132 @@ CREATE INDEX IF NOT EXISTS idx_validation_matrix_entries_version
   ON sv.squad_validation_matrix_entries(version_id);
 ```
 
+### sv.ai_prompts
+Catalog of AI prompts for various use cases.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.ai_prompts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  description TEXT,
+  category TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT ai_prompts_category_check 
+    CHECK (category IN ('STRUCTURE_PROPOSAL', 'REFINEMENT', 'ANALYSIS'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_prompts_category 
+  ON sv.ai_prompts(category);
+```
+
+### sv.ai_prompt_versions
+Version control for AI prompts. Each prompt can have multiple versions, but only one active at a time.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.ai_prompt_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prompt_id UUID NOT NULL REFERENCES sv.ai_prompts(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL,
+  prompt_text TEXT NOT NULL,
+  system_instructions TEXT,
+  model_name TEXT DEFAULT 'gpt-4',
+  temperature DECIMAL(2,1) DEFAULT 0.7,
+  is_active BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by_user_id UUID REFERENCES sv.users(id),
+  
+  CONSTRAINT ai_prompt_versions_unique 
+    UNIQUE (prompt_id, version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_prompt_versions_prompt 
+  ON sv.ai_prompt_versions(prompt_id);
+
+CREATE INDEX IF NOT EXISTS idx_ai_prompt_versions_active 
+  ON sv.ai_prompt_versions(prompt_id, is_active) 
+  WHERE is_active = true;
+```
+
+### sv.ai_structure_proposals
+Stores AI-generated structure proposals for squads. Proposals include suggested workflow, roles, and personas.
+
+**Status values:**
+- `DRAFT` - Newly generated proposal, not yet confirmed
+- `CONFIRMED` - User confirmed the proposal
+- `DISCARDED` - User rejected the proposal
+
+**Source context values:**
+- `PROBLEM` - Based only on problem statement
+- `BACKLOG` - Based on existing backlog
+- `BOTH` - Based on problem and backlog
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.ai_structure_proposals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  problem_id UUID REFERENCES sv.decisions(id),
+  workspace_id UUID NOT NULL REFERENCES sv.workspaces(id) ON DELETE CASCADE,
+  source_context TEXT NOT NULL,
+  input_snapshot JSONB NOT NULL,
+  proposal_payload JSONB NOT NULL,
+  uncertainties JSONB,
+  model_name TEXT,
+  prompt_version UUID REFERENCES sv.ai_prompt_versions(id),
+  created_by_user_id UUID REFERENCES sv.users(id),
+  status TEXT NOT NULL DEFAULT 'DRAFT',
+  confirmed_at TIMESTAMPTZ,
+  discarded_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT ai_proposals_source_context_check 
+    CHECK (source_context IN ('PROBLEM', 'BACKLOG', 'BOTH')),
+  
+  CONSTRAINT ai_proposals_status_check 
+    CHECK (status IN ('DRAFT', 'CONFIRMED', 'DISCARDED'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_proposals_squad 
+  ON sv.ai_structure_proposals(squad_id);
+
+CREATE INDEX IF NOT EXISTS idx_ai_proposals_workspace 
+  ON sv.ai_structure_proposals(workspace_id);
+
+CREATE INDEX IF NOT EXISTS idx_ai_proposals_status 
+  ON sv.ai_structure_proposals(squad_id, status);
+```
+
+### sv.ai_prompt_executions
+Tracks all AI prompt executions for cost monitoring, performance analysis, and learning.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.ai_prompt_executions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prompt_version_id UUID REFERENCES sv.ai_prompt_versions(id),
+  proposal_id UUID REFERENCES sv.ai_structure_proposals(id),
+  workspace_id UUID NOT NULL REFERENCES sv.workspaces(id) ON DELETE CASCADE,
+  input_tokens INTEGER,
+  output_tokens INTEGER,
+  total_tokens INTEGER,
+  execution_time_ms INTEGER,
+  success BOOLEAN DEFAULT true,
+  error_message TEXT,
+  executed_at TIMESTAMPTZ DEFAULT NOW(),
+  executed_by_user_id UUID REFERENCES sv.users(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_executions_proposal 
+  ON sv.ai_prompt_executions(proposal_id);
+
+CREATE INDEX IF NOT EXISTS idx_ai_executions_workspace 
+  ON sv.ai_prompt_executions(workspace_id);
+
+CREATE INDEX IF NOT EXISTS idx_ai_executions_executed_at 
+  ON sv.ai_prompt_executions(executed_at DESC);
+```
+
 ## Relationships
 
 ```
@@ -519,3 +645,19 @@ SELECT constraint_name, constraint_type
 FROM information_schema.table_constraints
 WHERE table_schema = 'sv' AND table_name = 'squads';
 ```
+
+## AI-Related Tables
+
+The schema also includes tables for AI-powered features:
+
+- **`sv.ai_prompts`**: Catalog of AI prompts by category
+- **`sv.ai_prompt_versions`**: Versioned prompts with parameters
+- **`sv.ai_structure_proposals`**: AI-generated structure proposals for squads
+- **`sv.ai_prompt_executions`**: Execution logs for learning and monitoring
+
+Additional constraints for AI tables:
+- **One active prompt version**: Only one version of each prompt can be active at a time
+- **AI proposal status**: Proposals must be in DRAFT, CONFIRMED, or DISCARDED state
+- **Source context**: Proposals must specify PROBLEM, BACKLOG, or BOTH as context
+
+For detailed information about the AI Structure Proposal feature, see [AI-STRUCTURE-PROPOSAL-FEATURE.md](./AI-STRUCTURE-PROPOSAL-FEATURE.md).
