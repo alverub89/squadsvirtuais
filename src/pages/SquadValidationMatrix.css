@@ -1,0 +1,276 @@
+.validation-matrix-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.validation-matrix-header {
+  margin-bottom: 2rem;
+}
+
+.validation-matrix-header h1 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.validation-matrix-header p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.btn-back:hover {
+  text-decoration: underline;
+}
+
+.matrix-section {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.matrix-section h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.version-description {
+  font-size: 1rem;
+  color: #666;
+  font-weight: normal;
+}
+
+.matrix-table {
+  overflow-x: auto;
+}
+
+.matrix-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.matrix-table th {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.matrix-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.role-name,
+.persona-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.persona-type {
+  color: #666;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.role-badge.global {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.role-badge.workspace {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.checkpoint-badge,
+.requirement-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.checkpoint-badge.issue {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.checkpoint-badge.decision {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.checkpoint-badge.phase {
+  background: #d4edda;
+  color: #155724;
+}
+
+.checkpoint-badge.map {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.requirement-badge.required {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.requirement-badge.optional {
+  background: #d4edda;
+  color: #155724;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.entry-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 150px 150px 50px;
+  gap: 1rem;
+  align-items: end;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.entry-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.entry-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-start;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.info-box {
+  padding: 1.5rem;
+  background: #e8f4f8;
+  border-left: 4px solid #17a2b8;
+  border-radius: 6px;
+}
+
+.info-box h3 {
+  font-size: 1rem;
+  color: #0c5460;
+  margin: 0 0 1rem 0;
+}
+
+.info-box ul {
+  color: #0c5460;
+  margin: 0 0 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.info-box li {
+  margin: 0.5rem 0;
+  line-height: 1.5;
+}
+
+.info-highlight {
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.empty-state {
+  background: #f8f9fa;
+  border: 1px dashed #ddd;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.empty-state p {
+  margin: 0.5rem 0;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.1rem;
+}
+
+.error {
+  color: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .entry-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .entry-row button {
+    justify-self: start;
+  }
+}

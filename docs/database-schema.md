@@ -300,6 +300,143 @@ CREATE INDEX IF NOT EXISTS idx_repo_connections_workspace
   ON sv.repo_connections(workspace_id);
 ```
 
+### sv.roles
+Global catalog of role specialties. Represents global specialties and serves as AI learning base.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  description TEXT,
+  responsibilities TEXT,
+  default_active BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_roles_code 
+  ON sv.roles(code);
+```
+
+### sv.workspace_roles
+Workspace-specific role extensions. Allows custom roles per workspace without polluting global catalog.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.workspace_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID NOT NULL REFERENCES sv.workspaces(id) ON DELETE CASCADE,
+  code TEXT NOT NULL,
+  label TEXT NOT NULL,
+  description TEXT,
+  responsibilities TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT workspace_roles_code_unique 
+    UNIQUE (workspace_id, code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_workspace_roles_workspace 
+  ON sv.workspace_roles(workspace_id);
+```
+
+### sv.squad_roles
+Defines which roles (global or workspace) are active in a squad. A role entry must reference either `role_id` OR `workspace_role_id`, not both.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.squad_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  role_id UUID REFERENCES sv.roles(id) ON DELETE CASCADE,
+  workspace_role_id UUID REFERENCES sv.workspace_roles(id) ON DELETE CASCADE,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT squad_roles_role_reference_check
+    CHECK (
+      (role_id IS NOT NULL AND workspace_role_id IS NULL) OR
+      (role_id IS NULL AND workspace_role_id IS NOT NULL)
+    )
+);
+
+CREATE INDEX IF NOT EXISTS idx_squad_roles_squad 
+  ON sv.squad_roles(squad_id);
+```
+
+### sv.squad_member_role_assignments
+Associates human users with role specialties in squads. **Business Rule**: One user can have only 1 active role per squad.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.squad_member_role_assignments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_member_id UUID NOT NULL REFERENCES sv.squad_members(id) ON DELETE CASCADE,
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  squad_role_id UUID NOT NULL REFERENCES sv.squad_roles(id) ON DELETE CASCADE,
+  active BOOLEAN DEFAULT true,
+  assigned_at TIMESTAMPTZ DEFAULT NOW(),
+  unassigned_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX idx_squad_member_role_unique_active 
+  ON sv.squad_member_role_assignments(squad_member_id, squad_id) 
+  WHERE active = true;
+```
+
+### sv.squad_validation_matrix_versions
+Version control for validation matrix configurations. **Never edit old versions**, always create new ones.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.squad_validation_matrix_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL,
+  description TEXT,
+  created_by_user_id UUID REFERENCES sv.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT squad_validation_matrix_versions_unique 
+    UNIQUE (squad_id, version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_validation_matrix_versions_squad 
+  ON sv.squad_validation_matrix_versions(squad_id);
+```
+
+### sv.squad_validation_matrix_entries
+Defines role ↔ persona validation rules per checkpoint type. Governs which roles validate which personas at which checkpoints.
+
+**Checkpoint types**: `ISSUE`, `DECISION`, `PHASE`, `MAP`  
+**Requirement levels**: `REQUIRED`, `OPTIONAL`
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.squad_validation_matrix_entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  version_id UUID NOT NULL REFERENCES sv.squad_validation_matrix_versions(id) ON DELETE CASCADE,
+  squad_role_id UUID NOT NULL REFERENCES sv.squad_roles(id) ON DELETE CASCADE,
+  persona_id UUID NOT NULL REFERENCES sv.personas(id) ON DELETE CASCADE,
+  checkpoint_type TEXT NOT NULL,
+  requirement_level TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT validation_matrix_checkpoint_type_check 
+    CHECK (checkpoint_type IN ('ISSUE', 'DECISION', 'PHASE', 'MAP')),
+  
+  CONSTRAINT validation_matrix_requirement_level_check 
+    CHECK (requirement_level IN ('REQUIRED', 'OPTIONAL')),
+  
+  CONSTRAINT validation_matrix_entries_unique 
+    UNIQUE (version_id, squad_role_id, persona_id, checkpoint_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_validation_matrix_entries_version 
+  ON sv.squad_validation_matrix_entries(version_id);
+```
+
 ## Relationships
 
 ```
@@ -317,17 +454,28 @@ users (1) ─────< (N) user_identities
          │       ├─< (N) phases       │
          │       ├─< (N) issues       │
          │       ├─< (N) decisions    │
-         │       ├─< (N) squad_members >─┐
+         │       ├─< (N) squad_members >───< (N) squad_member_role_assignments
+         │       │                       │                   │
+         │       ├─< (N) squad_roles ──────────────────────┘
+         │       │       │
+         │       ├─< (N) squad_validation_matrix_versions
+         │       │           │
+         │       │           └─< (N) squad_validation_matrix_entries
          │       │                       │
          │       └─< (N) squad_personas  │
          │                   │           │
          │ personas                      │
-         ├─< (N) personas ───────────────┘
+         ├─< (N) personas ───────────────┴───────────────────┘
+         │
+         │ roles
+         ├─< (N) workspace_roles ───> squad_roles
          │                   
          │ connections                
          ├─< (N) github_connections   
          └─< (N) repo_connections     
-                                       
+                                      
+roles (global) ──────────────────────> squad_roles
+                                      
 users (N) ──────────────────────────────┘
 ```
 
@@ -338,6 +486,11 @@ users (N) ───────────────────────�
 3. **Unique identities**: Each OAuth identity can only be linked to one user
 4. **Workspace membership**: Each user can only be a member once per workspace
 5. **Squad status**: Status must be one of the predefined values
+6. **Role reference**: A squad_role must reference either a global role OR a workspace role, not both
+7. **One role per member**: A user can have only 1 active role per squad
+8. **No duplicate roles**: A role cannot be active multiple times in the same squad
+9. **Matrix versioning**: Validation matrix versions are incremental per squad and never edited
+10. **Unique matrix entries**: No duplicate role-persona-checkpoint combinations within a version
 
 ## Verification Queries
 

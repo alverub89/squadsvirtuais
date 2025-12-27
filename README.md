@@ -179,6 +179,8 @@ Configurações no Netlify:
 - [Environment Variables](docs/environment-variables.md) - Lista completa de variáveis de ambiente
 - [Squads](docs/squads.md) - Documentação completa sobre squads: conceito, ciclo de vida, API e práticas
 - [Database Schema](docs/database-schema.md) - Esquema completo do banco de dados
+- [Roles & Validation Matrix](docs/roles-validation-matrix-api.md) - API de roles e matriz de validação
+- [Technical Decision: Roles](docs/technical-decision-roles-validation-matrix.md) - Decisão técnica sobre evolução do modelo de roles
 
 ## 🗄️ Banco de Dados
 
@@ -192,11 +194,48 @@ Tabelas principais:
 - `sv.squads` - Squads (unidades de trabalho)
 - `sv.phases` - Fases/etapas das squads
 - `sv.issues` - Issues/tarefas das squads
-- `sv.personas` - Personas definidas nas squads
+- `sv.personas` - Personas definidas no workspace
+- `sv.squad_personas` - Associação de personas com squads
 - `sv.decisions` - Decisões importantes tomadas nas squads
 - `sv.squad_members` - Membros atribuídos às squads
 
+**Roles e Governança:**
+- `sv.roles` - Catálogo global de especialidades
+- `sv.workspace_roles` - Roles customizadas por workspace
+- `sv.squad_roles` - Roles ativas em uma squad
+- `sv.squad_member_role_assignments` - Atribuição de roles aos membros
+- `sv.squad_validation_matrix_versions` - Versões da matriz de validação
+- `sv.squad_validation_matrix_entries` - Entradas role ↔ persona por checkpoint
+
 O banco usa constraints UNIQUE para evitar duplicação e permitir upserts seguros.
+
+### Roles e Matriz de Validação
+
+O Squads Virtuais implementa um sistema robusto de **especialidades (roles)** e **governança de validação**:
+
+#### Roles como Especialidades
+
+- **Roles globais**: Catálogo padrão do produto (Tech Lead, Frontend Dev, Backend Dev, etc.)
+- **Roles de workspace**: Roles customizadas criadas pelo workspace
+- **Squad roles**: Roles ativadas em uma squad específica
+
+**Regra importante:** Um membro pode ter apenas **1 role ativa por squad**.
+
+#### Matriz de Validação Role ↔ Persona
+
+A matriz de validação define **quem valida o quê** em cada checkpoint:
+
+- **Role**: Especialidade responsável pela validação
+- **Persona**: Ponto de vista que precisa ser validado
+- **Checkpoint Type**: Momento da validação (ISSUE, DECISION, PHASE, MAP)
+- **Requirement Level**: REQUIRED (obrigatória) ou OPTIONAL (recomendada)
+
+**Características:**
+- Versionada automaticamente (nunca edita versões antigas)
+- Contextual por squad
+- Base para checkpoints humanos e IA
+
+Para detalhes completos, consulte [Roles & Validation Matrix API](docs/roles-validation-matrix-api.md).
 
 ### Squads
 

@@ -10,6 +10,9 @@ import SquadDetail from './pages/SquadDetail'
 import PersonasList from './pages/PersonasList'
 import CreatePersona from './pages/CreatePersona'
 import EditPersona from './pages/EditPersona'
+import SquadRoles from './pages/SquadRoles'
+import SquadMemberRoles from './pages/SquadMemberRoles'
+import SquadValidationMatrix from './pages/SquadValidationMatrix'
 
 export default function App() {
   return (
@@ -71,6 +74,30 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <EditPersona />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/squads/:squadId/roles" 
+              element={
+                <ProtectedRoute>
+                  <SquadRoles />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/squads/:squadId/member-roles" 
+              element={
+                <ProtectedRoute>
+                  <SquadMemberRoles />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/squads/:squadId/validation-matrix" 
+              element={
+                <ProtectedRoute>
+                  <SquadValidationMatrix />
                 </ProtectedRoute>
               } 
             />
