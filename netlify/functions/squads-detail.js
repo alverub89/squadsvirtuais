@@ -125,12 +125,22 @@ async function getSquadOverview(event, squadId, userId) {
     [squadId]
   );
 
-  const membersPreview = membersResult.rows.map((m) => ({
-    initials: m.role_code || m.name?.substring(0, 2).toUpperCase() || "??",
-    name: m.name || m.email,
-    role: m.role_label || "Membro",
-    active: m.active,
-  }));
+  const membersPreview = membersResult.rows.map((m) => {
+    // Generate initials from name (first 2 chars) or role_code as fallback
+    let initials = "??";
+    if (m.name) {
+      initials = m.name.substring(0, 2).toUpperCase();
+    } else if (m.role_code) {
+      initials = m.role_code;
+    }
+    
+    return {
+      initials,
+      name: m.name || m.email,
+      role: m.role_label || "Membro",
+      active: m.active,
+    };
+  });
 
   // Get recent decisions (last 5)
   const decisionsResult = await query(

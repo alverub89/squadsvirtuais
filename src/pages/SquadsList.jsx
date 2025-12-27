@@ -107,6 +107,15 @@ export default function SquadsList() {
                 key={squad.id} 
                 className="squad-card"
                 onClick={() => navigate(`/workspaces/${workspaceId}/squads/${squad.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    navigate(`/workspaces/${workspaceId}/squads/${squad.id}`)
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`View squad ${squad.name}`}
               >
                 <div className="squad-icon">
                   {squad.name.charAt(0).toUpperCase()}
