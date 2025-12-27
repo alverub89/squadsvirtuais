@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/Layout'
 import ProblemStatementCard from '../components/ProblemStatementCard'
 import PersonaCard from '../components/PersonaCard'
+import DecisionModal from '../components/DecisionModal'
 import './SquadDetail.css'
 
 export default function SquadDetail() {
@@ -15,6 +16,7 @@ export default function SquadDetail() {
   const [error, setError] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ name: '', description: '', status: '' })
+  const [selectedDecision, setSelectedDecision] = useState(null)
 
   const loadSquadOverview = async () => {
     try {
@@ -346,7 +348,12 @@ export default function SquadDetail() {
               ) : (
                 <div className="decisions-list">
                   {recentDecisions.map((decision, index) => (
-                    <div key={index} className="decision-item">
+                    <div 
+                      key={index} 
+                      className="decision-item"
+                      onClick={() => setSelectedDecision(decision)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <div className="decision-icon">💬</div>
                       <div className="decision-content">
                         <div className="decision-title">{decision.title}</div>
@@ -377,6 +384,14 @@ export default function SquadDetail() {
           </div>
         )}
       </div>
+
+      {/* Decision Modal */}
+      {selectedDecision && (
+        <DecisionModal 
+          decision={selectedDecision}
+          onClose={() => setSelectedDecision(null)}
+        />
+      )}
     </Layout>
   )
 }
