@@ -235,20 +235,59 @@ export default function Layout({ children }) {
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav className="bottom-nav">
-        <button 
-          className="nav-item"
-          onClick={handleWorkspacesClick}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7" />
-            <rect x="14" y="3" width="7" height="7" />
-            <rect x="14" y="14" width="7" height="7" />
-            <rect x="3" y="14" width="7" height="7" />
-          </svg>
-          <span>Workspaces</span>
-        </button>
-      </nav>
+      {isInWorkspace && (
+        <nav className="bottom-nav">
+          <button 
+            className={`nav-item ${currentPath === `/workspaces/${workspaceId}/squads` || (currentPath.includes('/squads/') && !currentPath.includes('/create')) ? 'active' : ''}`}
+            onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+            </svg>
+            <span>Squads</span>
+          </button>
+          <button 
+            className={`nav-item ${currentPath.includes('/personas') ? 'active' : ''}`}
+            onClick={() => navigate(`/workspaces/${workspaceId}/personas`)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span>Personas</span>
+          </button>
+          <button className="nav-item nav-item-disabled" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M9 3v18" />
+            </svg>
+            <span>Backlog</span>
+          </button>
+          <button className="nav-item nav-item-disabled" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <span>Issues</span>
+          </button>
+        </nav>
+      )}
+      {!isInWorkspace && (
+        <nav className="bottom-nav">
+          <button 
+            className="nav-item"
+            onClick={handleWorkspacesClick}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <span>Workspaces</span>
+          </button>
+        </nav>
+      )}
     </div>
   )
 }

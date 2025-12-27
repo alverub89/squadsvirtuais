@@ -349,7 +349,7 @@
 }
 
 .sidebar-card {
-  background: #ffffff;
+  background: #f8fafc;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 24px;
@@ -462,9 +462,14 @@
   display: flex;
   gap: 12px;
   padding: 16px;
-  background: #f8fafc;
+  background: #ffffff;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
+  transition: box-shadow 0.2s;
+}
+
+.decision-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .decision-icon {
