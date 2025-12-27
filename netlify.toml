@@ -1,12 +1,2 @@
 [functions]
   directory = "netlify/functions"
-
-[[redirects]]
-  from = "/.netlify/functions/squads/:id/overview"
-  to = "/.netlify/functions/squads-detail?id=:id&action=overview"
-  status = 200
-
-[[redirects]]
-  from = "/.netlify/functions/squads/:id"
-  to = "/.netlify/functions/squads-detail?id=:id"
-  status = 200
