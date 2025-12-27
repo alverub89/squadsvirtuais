@@ -87,7 +87,10 @@ export default function SquadsList() {
               <p className="workspace-description">{activeWorkspace.description}</p>
             )}
           </div>
-          <button className="btn btn-primary" disabled>
+          <button 
+            className="btn btn-primary"
+            onClick={() => navigate(`/workspaces/${workspaceId}/squads/create`)}
+          >
             + Criar Squad
           </button>
         </div>

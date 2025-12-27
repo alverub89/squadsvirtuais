@@ -175,6 +175,8 @@ Configurações no Netlify:
 - [Issue #001.02 Fix](docs/issue-001-02-google-auth-identity-fix.md) - Histórico das issues e correção da persistência de identidades
 - [Architecture](docs/architecture.md) - Decisões arquiteturais e estrutura do projeto
 - [Environment Variables](docs/environment-variables.md) - Lista completa de variáveis de ambiente
+- [Squads](docs/squads.md) - Documentação completa sobre squads: conceito, ciclo de vida, API e práticas
+- [Database Schema](docs/database-schema.md) - Esquema completo do banco de dados
 
 ## 🗄️ Banco de Dados
 
@@ -183,8 +185,35 @@ Schema: `sv` (squads virtuais)
 Tabelas principais:
 - `sv.users` - Dados dos usuários
 - `sv.user_identities` - Identidades OAuth vinculadas aos usuários
+- `sv.workspaces` - Workspaces (contextos organizacionais)
+- `sv.workspace_members` - Membros dos workspaces
+- `sv.squads` - Squads (unidades de trabalho)
 
 O banco usa constraints UNIQUE para evitar duplicação e permitir upserts seguros.
+
+### Squads
+
+Uma **squad** é a unidade central de trabalho do produto. Cada squad:
+
+- Pertence a um workspace (não existe squad órfã)
+- Organiza o método completo: problema, personas, fases, backlog e integração com repositório
+- Tem um ciclo de vida com estados: `rascunho`, `ativa`, `aguardando_execucao`, `em_revisao`, `concluida`, `pausada`
+
+Para mais informações sobre squads, consulte [docs/squads.md](docs/squads.md).
+
+### Relação Workspace → Squad
+
+```
+Workspace (contexto organizacional)
+  └── Squad 1 (problema específico)
+  └── Squad 2 (problema específico)
+  └── Squad 3 (problema específico)
+```
+
+- **Workspace**: Organiza pessoas, permissões e contexto geral
+- **Squad**: Foca em um problema de negócio específico
+
+Apenas membros de um workspace podem criar e visualizar squads nele.
 
 ## 🔒 Segurança
 
