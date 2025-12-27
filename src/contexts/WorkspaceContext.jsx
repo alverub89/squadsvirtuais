@@ -12,6 +12,8 @@ export function WorkspaceProvider({ children }) {
         return JSON.parse(stored)
       } catch (e) {
         console.error('Error parsing stored workspace:', e)
+        // Clear corrupted data to prevent repeated parsing attempts
+        sessionStorage.removeItem('activeWorkspace')
         return null
       }
     }
