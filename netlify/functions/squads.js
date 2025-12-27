@@ -46,6 +46,7 @@ exports.handler = async (event) => {
         id,
         name,
         description,
+        status,
         workspace_id,
         created_at
       FROM sv.squads

@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import WorkspacesList from './pages/WorkspacesList'
 import SquadsList from './pages/SquadsList'
+import CreateSquad from './pages/CreateSquad'
 
 export default function App() {
   return (
@@ -26,6 +27,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <SquadsList />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/squads/create" 
+              element={
+                <ProtectedRoute>
+                  <CreateSquad />
                 </ProtectedRoute>
               } 
             />
