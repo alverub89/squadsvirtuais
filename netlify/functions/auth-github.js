@@ -25,6 +25,13 @@ function redirect(location) {
 exports.handler = async (event) => {
   try {
     const { httpMethod, queryStringParameters } = event;
+    
+    console.log('[auth-github] INICIO', {
+      httpMethod,
+      queryStringParameters,
+      hasCode: !!queryStringParameters?.code,
+      timestamp: new Date().toISOString()
+    });
 
     // Step 1: Redirect to GitHub OAuth
     if (httpMethod === "GET" && !queryStringParameters?.code) {
@@ -36,6 +43,12 @@ exports.handler = async (event) => {
       const scope = "read:user user:email";
       const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 
+      console.log('[auth-github] Redirecionando para GitHub OAuth', {
+        redirectUri,
+        scope,
+        frontendUrl
+      });
+
       return redirect(githubAuthUrl);
     }
 
@@ -46,6 +59,11 @@ exports.handler = async (event) => {
       }
 
       const code = queryStringParameters.code;
+
+      console.log('[auth-github] Processando callback com code', {
+        codeLength: code?.length,
+        hasState: !!queryStringParameters?.state
+      });
 
       // Exchange code for access token
       const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
@@ -64,10 +82,12 @@ exports.handler = async (event) => {
       const tokenData = await tokenResponse.json();
 
       if (!tokenData.access_token) {
+        console.error('[auth-github] Falha ao obter access_token', tokenData);
         return redirect(`${frontendUrl}?error=github_auth_failed`);
       }
 
       const accessToken = tokenData.access_token;
+      console.log('[auth-github] ✓ Access token obtido do GitHub');
 
       // Get user info from GitHub
       const userResponse = await fetch("https://api.github.com/user", {
@@ -78,6 +98,13 @@ exports.handler = async (event) => {
       });
 
       const githubUser = await userResponse.json();
+
+      console.log('[auth-github] Dados do usuário GitHub obtidos', {
+        id: githubUser.id,
+        login: githubUser.login,
+        email: githubUser.email,
+        hasPublicEmail: !!githubUser.email
+      });
 
       // Get primary email if not public
       let email = githubUser.email;
@@ -92,9 +119,14 @@ exports.handler = async (event) => {
         const emails = await emailsResponse.json();
         const primaryEmail = emails.find((e) => e.primary);
         email = primaryEmail?.email || emails[0]?.email;
+        console.log('[auth-github] Email privado obtido da lista de emails', {
+          totalEmails: emails.length,
+          selectedEmail: email
+        });
       }
 
       if (!email) {
+        console.error('[auth-github] Email não disponível para o usuário');
         return redirect(`${frontendUrl}?error=github_email_missing`);
       }
 
@@ -122,6 +154,12 @@ exports.handler = async (event) => {
 
       const user = userRes.rows[0];
 
+      console.log('[auth-github] Usuário upsert realizado', {
+        userId: user.id,
+        email: user.email,
+        name: user.name
+      });
+
       // 2) upsert identity por (provider, provider_user_id)
       await query(
         `
@@ -140,8 +178,16 @@ exports.handler = async (event) => {
       // 3) JWT do app
       const token = signJwt({ userId: user.id, email: user.email, name: user.name });
 
+      console.log('[auth-github] JWT gerado', {
+        userId: user.id,
+        hasToken: !!token
+      });
+
+      const redirectUrl = `${frontendUrl}?token=${encodeURIComponent(token)}`;
+      console.log('[auth-github] REDIRECT URL:', `${frontendUrl}?token=[REDACTED]`);
+
       // Redirect to frontend with token
-      return redirect(`${frontendUrl}?token=${encodeURIComponent(token)}`);
+      return redirect(redirectUrl);
     }
 
     return json(405, { error: "Method Not Allowed" });

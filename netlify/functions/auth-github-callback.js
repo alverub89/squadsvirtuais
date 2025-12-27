@@ -11,7 +11,13 @@ const frontendUrl = process.env.FRONTEND_URL || "https://squadsvirtuais.com";
 
 exports.handler = async (event) => {
   try {
-    console.log("[auth-github-callback] Processando callback OAuth");
+    console.log("[auth-github-callback] INICIO", {
+      httpMethod: event.httpMethod,
+      queryStringParameters: event.queryStringParameters,
+      hasCode: !!event.queryStringParameters?.code,
+      hasState: !!event.queryStringParameters?.state,
+      timestamp: new Date().toISOString()
+    });
 
     // Only allow GET
     if (event.httpMethod !== "GET") {
@@ -135,7 +141,11 @@ exports.handler = async (event) => {
 
     // Redirect to frontend with success
     console.log("[auth-github-callback] OAuth concluído com sucesso");
-    return redirect(`${frontendUrl}?github_connected=true&workspace_id=${encodeURIComponent(workspaceId)}`);
+    
+    const redirectUrl = `${frontendUrl}?github_connected=true&workspace_id=${encodeURIComponent(workspaceId)}`;
+    console.log("[auth-github-callback] REDIRECT URL:", redirectUrl);
+    
+    return redirect(redirectUrl);
   } catch (error) {
     console.error("[auth-github-callback] Erro inesperado:", error.message);
     console.error("[auth-github-callback] Stack:", error.stack);
