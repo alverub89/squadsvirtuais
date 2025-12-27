@@ -168,6 +168,8 @@ Configurações no Netlify:
 - **Publish directory**: `dist`
 - **Functions directory**: `netlify/functions`
 
+**SPA Routing**: O arquivo `netlify.toml` configura redirects para que todas as rotas sejam servidas pelo `index.html`, evitando erros 404 ao recarregar páginas ou acessar URLs diretamente. As Netlify Functions são preservadas em `/.netlify/functions/*`.
+
 ## 📚 Documentação
 
 - [OAuth Flow](docs/oauth-flow.md) - Fluxo detalhado de autenticação Google e GitHub
