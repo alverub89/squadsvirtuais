@@ -106,9 +106,9 @@ After deployment, test:
 5. **Submit**: Create the squad
 6. **Verify**: Squad appears in list with status "rascunho"
 7. **Test SPA Routing**: 
-   - Refresh the page on any route (e.g., `/workspaces/:id/squads`) - should NOT return 404
-   - Copy a deep route URL and open in new tab - should work correctly
-   - All Netlify Functions should continue working at `/.netlify/functions/*`
+   - Navigate to any route, then refresh the page (e.g., while viewing a squad list at `/workspaces/abc123/squads`) - should NOT return 404
+   - Copy a deep route URL (e.g., `https://squadsvirtuais.com/workspaces/abc123/squads/def456`) and paste it in a new browser tab - should load correctly
+   - Verify Netlify Functions still work by checking that the page loads data from `/.netlify/functions/*` endpoints
 
 ### 4. Test Error Cases
 
