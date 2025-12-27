@@ -40,7 +40,7 @@ Este documento lista todas as variáveis de ambiente necessárias para o projeto
   - `netlify/functions/auth-github-callback.js` (callback OAuth)
 - **Nota**: OAuth App precisa ter scope `repo` para integração de repositórios
 
-#### `GITHUB_CLIENT_SECRETS_OAUTHS_OAUTH`
+#### `GITHUB_CLIENT_SECRETS_OAUTH`
 - **Descrição**: Client Secret do GitHub OAuth App
 - **Tipo**: String (sensível)
 - **Exemplo**: `abcdef1234567890abcdef1234567890abcdef12`
@@ -144,7 +144,7 @@ VITE_GOOGLE_CLIENT_ID=123456789-abc123def456.apps.googleusercontent.com
 
 # Backend (Netlify Functions usam as mesmas)
 GITHUB_CLIENT_ID=Iv1.abc123def456789
-GITHUB_CLIENT_SECRETS_OAUTHS_OAUTH=abcdef1234567890abcdef1234567890abcdef12
+GITHUB_CLIENT_SECRETS_OAUTH=abcdef1234567890abcdef1234567890abcdef12
 FRONTEND_URL=http://localhost:5173
 JWT_SECRET=your-local-jwt-secret-at-least-32-chars
 DATABASE_URL=postgresql://user:pass@localhost:5432/squadsvirtuais
@@ -198,9 +198,9 @@ netlify dev
 - [ ] Homepage URL: `https://squadsvirtuais.com`
 - [ ] Authorization callback URL: `https://squadsvirtuais.com/.netlify/functions/auth-github`
 - [ ] `GITHUB_CLIENT_ID` configurado no Netlify
-- [ ] `GITHUB_CLIENT_SECRETS_OAUTHS_OAUTH` configurado no Netlify (marcado como Secret)
+- [ ] `GITHUB_CLIENT_SECRETS_OAUTH` configurado no Netlify (marcado como Secret)
 - [ ] `GITHUB_CLIENT_ID` configurado no `.env.local` (dev)
-- [ ] `GITHUB_CLIENT_SECRETS_OAUTHS_OAUTH` configurado no `.env.local` (dev)
+- [ ] `GITHUB_CLIENT_SECRETS_OAUTH` configurado no `.env.local` (dev)
 
 ### JWT
 
@@ -251,7 +251,7 @@ netlify dev
 
 ### Erro: "GitHub OAuth não configurado corretamente"
 
-**Causa**: `GITHUB_CLIENT_ID` ou `GITHUB_CLIENT_SECRETS_OAUTHS_OAUTH` ausentes
+**Causa**: `GITHUB_CLIENT_ID` ou `GITHUB_CLIENT_SECRETS_OAUTH` ausentes
 
 **Solução**:
 1. Verifique ambas as variáveis no Netlify
