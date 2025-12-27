@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/Layout'
 import ProblemStatementCard from '../components/ProblemStatementCard'
 import PersonaCard from '../components/PersonaCard'
+import RolesCard from '../components/RolesCard'
 import DecisionModal from '../components/DecisionModal'
 import './SquadDetail.css'
 
@@ -280,6 +281,13 @@ export default function SquadDetail() {
           onUpdate={loadSquadOverview}
         />
 
+        {/* Roles Card */}
+        <RolesCard 
+          squadId={squadId}
+          workspaceId={workspaceId}
+          onUpdate={loadSquadOverview}
+        />
+
         {/* Main Content Grid */}
         <div className="content-grid">
           {/* Timeline Section */}
@@ -316,18 +324,9 @@ export default function SquadDetail() {
             <div className="sidebar-card">
               <div className="sidebar-card-header">
                 <h3>Membros da Squad</h3>
-                <div className="sidebar-card-actions">
-                  <button 
-                    className="btn-link"
-                    onClick={() => navigate(`/workspaces/${workspaceId}/roles`)}
-                    title="Gerenciar Roles"
-                  >
-                    Criar Role
-                  </button>
-                  {counts.members > 0 && (
-                    <button className="btn-link">Ver todos →</button>
-                  )}
-                </div>
+                {counts.members > 0 && (
+                  <button className="btn-link">Ver todos →</button>
+                )}
               </div>
               {membersPreview.length === 0 ? (
                 <p className="empty-text">Nenhum membro atribuído</p>
