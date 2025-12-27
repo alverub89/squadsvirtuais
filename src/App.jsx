@@ -7,6 +7,8 @@ import WorkspacesList from './pages/WorkspacesList'
 import SquadsList from './pages/SquadsList'
 import CreateSquad from './pages/CreateSquad'
 import SquadDetail from './pages/SquadDetail'
+import PersonasList from './pages/PersonasList'
+import CreatePersona from './pages/CreatePersona'
 
 export default function App() {
   return (
@@ -44,6 +46,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <SquadDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/personas" 
+              element={
+                <ProtectedRoute>
+                  <PersonasList />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/personas/create" 
+              element={
+                <ProtectedRoute>
+                  <CreatePersona />
                 </ProtectedRoute>
               } 
             />
