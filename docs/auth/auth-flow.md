@@ -201,7 +201,7 @@ const token = jwt.sign(
 
 ```
 HTTP 302 Found
-Location: https://squadsvirtuais.com?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Location: https://squadsvirtuais.com/login?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 ### 7. Armazenamento no Frontend
