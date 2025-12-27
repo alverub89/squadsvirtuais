@@ -128,9 +128,9 @@ async function listPersonas(event, userId) {
       COUNT(sp.id) as squad_count
     FROM sv.personas p
     LEFT JOIN sv.squad_personas sp ON p.id = sp.persona_id
-    WHERE p.workspace_id = $1 AND p.active = true
+    WHERE p.workspace_id = $1
     GROUP BY p.id
-    ORDER BY p.created_at DESC
+    ORDER BY p.active DESC, p.created_at DESC
     `,
     [workspaceId]
   );
@@ -338,6 +338,49 @@ async function getPersona(event, personaId, userId) {
 }
 
 /**
+ * DELETE /personas/:id
+ * Delete a persona
+ */
+async function deletePersona(event, personaId, userId) {
+  console.log("[personas] Deleting persona:", personaId);
+  
+  // Get persona to verify access
+  const personaResult = await query(
+    `SELECT workspace_id FROM sv.personas WHERE id = $1`,
+    [personaId]
+  );
+  
+  if (personaResult.rows.length === 0) {
+    return json(404, { error: "Persona não encontrada" });
+  }
+  
+  const workspaceId = personaResult.rows[0].workspace_id;
+  
+  // Verify user is member of workspace
+  const memberCheck = await query(
+    `SELECT 1 FROM sv.workspace_members WHERE workspace_id = $1 AND user_id = $2`,
+    [workspaceId, userId]
+  );
+  
+  if (memberCheck.rows.length === 0) {
+    return json(403, { error: "Acesso negado ao workspace" });
+  }
+  
+  // Delete persona (cascade will handle related records)
+  await query(
+    `DELETE FROM sv.personas WHERE id = $1`,
+    [personaId]
+  );
+  
+  console.log("[personas] Persona deleted:", personaId);
+  
+  return json(200, {
+    ok: true,
+    message: "Persona excluída com sucesso"
+  });
+}
+
+/**
  * Main handler
  */
 exports.handler = async (event) => {
@@ -377,6 +420,16 @@ exports.handler = async (event) => {
       }
       
       return await updatePersona(event, personaId, userId);
+    } else if (method === "DELETE") {
+      // Extract ID from path (last segment)
+      const pathSegments = event.path.split('/').filter(Boolean);
+      const personaId = pathSegments[pathSegments.length - 1];
+      
+      if (!personaId) {
+        return json(400, { error: "ID é obrigatório para DELETE" });
+      }
+      
+      return await deletePersona(event, personaId, userId);
     } else {
       return json(405, { error: "Método não permitido" });
     }
