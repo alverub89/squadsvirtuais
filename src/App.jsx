@@ -13,6 +13,7 @@ import EditPersona from './pages/EditPersona'
 import SquadRoles from './pages/SquadRoles'
 import SquadMemberRoles from './pages/SquadMemberRoles'
 import SquadValidationMatrix from './pages/SquadValidationMatrix'
+import WorkspaceRoles from './pages/WorkspaceRoles'
 
 export default function App() {
   return (
@@ -34,6 +35,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <SquadsList />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/roles" 
+              element={
+                <ProtectedRoute>
+                  <WorkspaceRoles />
                 </ProtectedRoute>
               } 
             />

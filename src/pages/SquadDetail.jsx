@@ -316,9 +316,18 @@ export default function SquadDetail() {
             <div className="sidebar-card">
               <div className="sidebar-card-header">
                 <h3>Membros da Squad</h3>
-                {counts.members > 0 && (
-                  <button className="btn-link">Ver todos →</button>
-                )}
+                <div className="sidebar-card-actions">
+                  <button 
+                    className="btn-link"
+                    onClick={() => navigate(`/workspaces/${workspaceId}/roles`)}
+                    title="Gerenciar Roles"
+                  >
+                    Criar Role
+                  </button>
+                  {counts.members > 0 && (
+                    <button className="btn-link">Ver todos →</button>
+                  )}
+                </div>
               </div>
               {membersPreview.length === 0 ? (
                 <p className="empty-text">Nenhum membro atribuído</p>

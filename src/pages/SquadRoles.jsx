@@ -180,6 +180,12 @@ export default function SquadRoles() {
             <h1>Roles da Squad</h1>
             <p>Configure quais especialidades estão ativas nesta squad</p>
           </div>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => navigate(`/workspaces/${workspaceId}/roles`)}
+          >
+            Gerenciar Roles
+          </button>
         </div>
 
         {/* Active Squad Roles */}
