@@ -22,7 +22,6 @@ export default function EditPersona() {
     active: true
   })
   const [squadAssociations, setSquadAssociations] = useState([])
-  const [decisions, setDecisions] = useState([])
 
   useEffect(() => {
     const loadPersona = async () => {
@@ -53,9 +52,6 @@ export default function EditPersona() {
           active: data.persona.active !== false
         })
         setSquadAssociations(data.squad_associations || [])
-
-        // Load decisions for this persona (if needed)
-        // For now we'll show squad associations
       } catch (err) {
         console.error('Error loading persona:', err)
         setError(err.message)
