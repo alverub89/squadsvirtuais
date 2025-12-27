@@ -29,8 +29,12 @@ function getRelativeTime(date) {
  */
 async function buildTimeline(squadId) {
   // Check data signals
-  const [personasResult, phasesResult, issuesResult, decisionsResult] =
+  const [problemStatementResult, personasResult, phasesResult, issuesResult, decisionsResult] =
     await Promise.all([
+      query(
+        `SELECT COUNT(*) as count FROM sv.decisions WHERE squad_id = $1 AND title = 'Problem Statement'`,
+        [squadId]
+      ),
       query(
         `SELECT COUNT(*) as count FROM sv.personas WHERE squad_id = $1 AND active = true`,
         [squadId]
@@ -46,6 +50,7 @@ async function buildTimeline(squadId) {
       ]),
     ]);
 
+  const hasProblemStatement = parseInt(problemStatementResult.rows[0]?.count || 0) > 0;
   const hasPersonas = parseInt(personasResult.rows[0]?.count || 0) > 0;
   const hasPhases = parseInt(phasesResult.rows[0]?.count || 0) > 0;
   const hasIssues = parseInt(issuesResult.rows[0]?.count || 0) > 0;
@@ -57,8 +62,8 @@ async function buildTimeline(squadId) {
       key: "problem",
       title: "Análise do Problema",
       description: "A squad analisou o problema de negócio e identificou os principais requisitos.",
-      state: "done", // Always done for now (future: check problem statement)
-      relativeTime: "Há 2 dias",
+      state: hasProblemStatement ? "done" : (hasPersonas || hasPhases || hasIssues || hasDecisions ? "current" : "next"),
+      relativeTime: hasProblemStatement ? "Há 2 dias" : null,
     },
     {
       key: "personas",
@@ -68,7 +73,9 @@ async function buildTimeline(squadId) {
         ? "done"
         : hasPhases || hasIssues || hasDecisions
           ? "current"
-          : "next",
+          : hasProblemStatement
+            ? "next"
+            : "future",
       relativeTime: hasPersonas ? "Há 1 dia" : null,
     },
     {

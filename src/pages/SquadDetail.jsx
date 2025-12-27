@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/Layout'
+import ProblemStatementCard from '../components/ProblemStatementCard'
 import './SquadDetail.css'
 
 export default function SquadDetail() {
@@ -262,6 +263,12 @@ export default function SquadDetail() {
             </div>
           </div>
         </div>
+
+        {/* Problem Statement Card */}
+        <ProblemStatementCard 
+          squadId={squadId} 
+          onUpdate={loadSquadOverview}
+        />
 
         {/* Main Content Grid */}
         <div className="content-grid">
