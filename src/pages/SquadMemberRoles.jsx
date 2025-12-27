@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/Layout'
@@ -15,7 +15,7 @@ export default function SquadMemberRoles() {
   const [error, setError] = useState(null)
   const [assigning, setAssigning] = useState(null)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -77,7 +77,7 @@ export default function SquadMemberRoles() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [squadId, token])
 
   useEffect(() => {
     if (!workspaceId || !squadId) {
@@ -85,8 +85,7 @@ export default function SquadMemberRoles() {
       return
     }
     loadData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId, squadId, token, navigate])
+  }, [workspaceId, squadId, navigate, loadData])
 
   const handleAssignRole = async (memberId, squadRoleId) => {
     try {

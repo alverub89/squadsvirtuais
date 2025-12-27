@@ -72,9 +72,17 @@ exports.handler = async (event) => {
     if (event.httpMethod === "PATCH") {
       console.log("[workspace-roles] Atualizando workspace role");
 
-      const roleId = event.path.split('/').pop();
+      // Try to get role ID from path
+      const pathParts = event.path.split('/');
+      const roleIdFromPath = pathParts[pathParts.length - 1];
+      
       const body = JSON.parse(event.body || "{}");
-      const { label, description, responsibilities, active } = body;
+      const { label, description, responsibilities, active, role_id } = body;
+
+      // Use path ID if it's a valid UUID, otherwise use body ID
+      const roleId = roleIdFromPath && roleIdFromPath.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) 
+        ? roleIdFromPath 
+        : role_id;
 
       if (!roleId) {
         return json(400, { error: "Role ID é obrigatório" });

@@ -160,9 +160,17 @@ exports.handler = async (event) => {
     if (event.httpMethod === "PATCH") {
       console.log("[squad-roles] Atualizando status de squad role");
 
-      const squadRoleId = event.path.split('/').pop();
+      // Try to get squad role ID from path, fallback to body
+      const pathParts = event.path.split('/');
+      const squadRoleIdFromPath = pathParts[pathParts.length - 1];
+      
       const body = JSON.parse(event.body || "{}");
-      const { active } = body;
+      const { active, squad_role_id } = body;
+
+      // Use path ID if it's a valid UUID, otherwise use body ID
+      const squadRoleId = squadRoleIdFromPath && squadRoleIdFromPath.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) 
+        ? squadRoleIdFromPath 
+        : squad_role_id;
 
       if (!squadRoleId) {
         return json(400, { error: "Squad role ID é obrigatório" });

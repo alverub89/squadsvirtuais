@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/Layout'
@@ -20,7 +20,7 @@ export default function SquadValidationMatrix() {
   const [newEntries, setNewEntries] = useState([])
   const [description, setDescription] = useState('')
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -82,7 +82,7 @@ export default function SquadValidationMatrix() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [workspaceId, squadId, token])
 
   useEffect(() => {
     if (!workspaceId || !squadId) {
@@ -90,8 +90,7 @@ export default function SquadValidationMatrix() {
       return
     }
     loadData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId, squadId, token, navigate])
+  }, [workspaceId, squadId, navigate, loadData])
 
   const handleAddEntry = () => {
     setNewEntries([
