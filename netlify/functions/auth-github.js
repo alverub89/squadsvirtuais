@@ -180,11 +180,11 @@ exports.handler = async (event) => {
 
       console.log('[auth-github] JWT gerado', {
         userId: user.id,
-        tokenLength: token?.length
+        hasToken: !!token
       });
 
       const redirectUrl = `${frontendUrl}?token=${encodeURIComponent(token)}`;
-      console.log('[auth-github] REDIRECT URL:', redirectUrl.substring(0, redirectUrl.indexOf('?token=') + 20) + '...');
+      console.log('[auth-github] REDIRECT URL:', `${frontendUrl}?token=[REDACTED]`);
 
       // Redirect to frontend with token
       return redirect(redirectUrl);
