@@ -144,7 +144,7 @@
 
 /* Persona card content */
 .persona-card-content {
-  cursor: pointer;
+  /* Content is not clickable for now */
 }
 
 .persona-card-content h3 {

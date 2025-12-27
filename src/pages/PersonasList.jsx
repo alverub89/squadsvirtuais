@@ -217,18 +217,7 @@ export default function PersonasList() {
                   </div>
                 </div>
 
-                <div 
-                  className="persona-card-content"
-                  onClick={() => navigate(`/workspaces/${workspaceId}/personas/${persona.id}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      navigate(`/workspaces/${workspaceId}/personas/${persona.id}`)
-                    }
-                  }}
-                >
+                <div className="persona-card-content">
                   <h3>{persona.name}</h3>
                   <div className="persona-type-label">
                     {typeLabels[persona.type] || persona.type}
