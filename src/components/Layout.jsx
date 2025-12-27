@@ -1,5 +1,5 @@
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useWorkspace } from '../contexts/WorkspaceContext'
 import './Layout.css'
@@ -8,9 +8,43 @@ export default function Layout({ children }) {
   const navigate = useNavigate()
   const { workspaceId } = useParams()
   const location = useLocation()
-  const { user, logout } = useAuth()
-  const { activeWorkspace, clearWorkspace } = useWorkspace()
+  const { user, logout, token } = useAuth()
+  const { activeWorkspace, clearWorkspace, selectWorkspace } = useWorkspace()
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false)
+  const [workspaces, setWorkspaces] = useState([])
+  const [loadingWorkspaces, setLoadingWorkspaces] = useState(false)
+  const [workspacesError, setWorkspacesError] = useState(null)
+
+  // Fetch workspaces when menu is opened
+  useEffect(() => {
+    const loadWorkspaces = async () => {
+      if (!showWorkspaceMenu || !token) return
+      
+      try {
+        setLoadingWorkspaces(true)
+        setWorkspacesError(null)
+        const res = await fetch('/.netlify/functions/workspaces', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (!res.ok) {
+          throw new Error('Erro ao carregar workspaces')
+        }
+
+        const data = await res.json()
+        setWorkspaces(data.workspaces || [])
+      } catch (err) {
+        console.error('Error loading workspaces:', err)
+        setWorkspacesError('Erro ao carregar workspaces')
+      } finally {
+        setLoadingWorkspaces(false)
+      }
+    }
+
+    loadWorkspaces()
+  }, [showWorkspaceMenu, token])
 
   const handleLogout = () => {
     logout()
@@ -23,7 +57,13 @@ export default function Layout({ children }) {
     navigate('/workspaces')
   }
 
-  const handleWorkspaceSwitch = () => {
+  const handleWorkspaceSelect = (workspace) => {
+    setShowWorkspaceMenu(false)
+    selectWorkspace(workspace)
+    navigate(`/workspaces/${workspace.id}/squads`)
+  }
+
+  const handleCreateWorkspace = () => {
     setShowWorkspaceMenu(false)
     clearWorkspace()
     navigate('/workspaces')
@@ -51,28 +91,49 @@ export default function Layout({ children }) {
               </svg>
               {showWorkspaceMenu && (
                 <div className="workspace-menu" onClick={(e) => e.stopPropagation()}>
-                  <button onClick={handleWorkspaceSwitch} className="workspace-menu-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="7" height="7" />
-                      <rect x="14" y="3" width="7" height="7" />
-                      <rect x="14" y="14" width="7" height="7" />
-                      <rect x="3" y="14" width="7" height="7" />
-                    </svg>
-                    Trocar workspace
-                  </button>
-                  <button className="workspace-menu-item" disabled>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="3" />
-                      <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24" />
-                    </svg>
-                    Configurações do workspace
-                  </button>
-                  <button onClick={handleWorkspaceSwitch} className="workspace-menu-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    Criar novo workspace
-                  </button>
+                  {loadingWorkspaces ? (
+                    <div className="workspace-menu-loading">
+                      Carregando workspaces...
+                    </div>
+                  ) : workspacesError ? (
+                    <div className="workspace-menu-error">
+                      {workspacesError}
+                    </div>
+                  ) : (
+                    <>
+                      {workspaces.length > 0 && (
+                        <>
+                          <div className="workspace-menu-section-title">
+                            Seus workspaces
+                          </div>
+                          {workspaces.map((workspace) => (
+                            <button
+                              key={workspace.id}
+                              onClick={() => handleWorkspaceSelect(workspace)}
+                              className={`workspace-menu-item ${workspace.id === activeWorkspace?.id ? 'active' : ''}`}
+                            >
+                              <div className="workspace-menu-avatar">
+                                {workspace.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="workspace-menu-info">
+                                <span className="workspace-menu-name">{workspace.name}</span>
+                                {workspace.type && (
+                                  <span className="workspace-menu-type">{workspace.type}</span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                          <div className="workspace-menu-divider"></div>
+                        </>
+                      )}
+                      <button onClick={handleCreateWorkspace} className="workspace-menu-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        Criar novo workspace
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
