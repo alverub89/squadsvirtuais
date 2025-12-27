@@ -83,8 +83,8 @@ async function generateProposal(event, userId) {
   // Get existing roles
   const rolesResult = await query(
     `SELECT 
-       COALESCE(r.label, wr.label) as label,
-       COALESCE(r.description, wr.description) as description
+       COALESCE(sr.name, r.label, wr.label) as label,
+       COALESCE(sr.description, r.description, wr.description, '') as description
      FROM sv.squad_roles sr
      LEFT JOIN sv.roles r ON sr.role_id = r.id
      LEFT JOIN sv.workspace_roles wr ON sr.workspace_role_id = wr.id

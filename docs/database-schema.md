@@ -343,7 +343,7 @@ CREATE INDEX IF NOT EXISTS idx_workspace_roles_workspace
 ```
 
 ### sv.squad_roles
-Defines which roles (global or workspace) are active in a squad. A role entry must reference either `role_id` OR `workspace_role_id`, not both.
+Defines which roles (global or workspace) are active in a squad. A role entry must reference either `role_id` OR `workspace_role_id`, not both. Optional `name` and `description` columns allow custom role definitions that override the referenced role's label and description.
 
 ```sql
 CREATE TABLE IF NOT EXISTS sv.squad_roles (
@@ -351,6 +351,8 @@ CREATE TABLE IF NOT EXISTS sv.squad_roles (
   squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
   role_id UUID REFERENCES sv.roles(id) ON DELETE CASCADE,
   workspace_role_id UUID REFERENCES sv.workspace_roles(id) ON DELETE CASCADE,
+  name TEXT, -- Custom name for this role in the squad, overrides role_id/workspace_role_id label
+  description TEXT, -- Custom description for this role in the squad, overrides role_id/workspace_role_id description
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
