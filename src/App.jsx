@@ -2,8 +2,33 @@ import './App.css'
 import { GoogleLogin } from '@react-oauth/google'
 import { useEffect, useState } from 'react'
 
+// Error message mapping for OAuth errors
+const ERROR_MESSAGES = {
+  'github_config_error': 'GitHub OAuth não configurado corretamente. Entre em contato com o administrador.',
+  'github_auth_failed': 'Falha na autenticação com GitHub. Tente novamente.',
+  'github_email_missing': 'Não foi possível obter seu email do GitHub. Verifique suas configurações de privacidade.',
+  'internal_error': 'Erro interno do servidor. Tente novamente mais tarde.',
+  'github_oauth_error': 'Erro no processo de autenticação GitHub.',
+  'github_code_missing': 'Código de autenticação não recebido.',
+  'github_state_missing': 'Estado de autenticação não recebido.',
+  'github_invalid_state': 'Estado de autenticação inválido.',
+  'github_token_exchange_failed': 'Falha ao trocar código de autenticação.',
+  'github_user_fetch_failed': 'Falha ao buscar dados do usuário GitHub.',
+  'github_db_error': 'Erro ao salvar conexão GitHub.',
+  'github_internal_error': 'Erro interno ao processar autenticação GitHub.'
+}
+
 export default function App() {
-  const [errorMessage, setErrorMessage] = useState(null)
+  // Initialize error message from URL params
+  const [errorMessage] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const error = urlParams.get('error')
+    if (error) {
+      console.error('Erro no login GitHub:', error)
+      return ERROR_MESSAGES[error] || 'Erro desconhecido no login.'
+    }
+    return null
+  })
 
   useEffect(() => {
     // Handle OAuth callback with token from GitHub
@@ -21,31 +46,6 @@ export default function App() {
     }
 
     if (error) {
-      console.error('Erro no login GitHub:', error)
-      
-      // Map error codes to user-friendly messages in Portuguese
-      const errorMessages = {
-        'github_config_error': 'GitHub OAuth não configurado corretamente. Entre em contato com o administrador.',
-        'github_auth_failed': 'Falha na autenticação com GitHub. Tente novamente.',
-        'github_email_missing': 'Não foi possível obter seu email do GitHub. Verifique suas configurações de privacidade.',
-        'internal_error': 'Erro interno do servidor. Tente novamente mais tarde.',
-        'github_oauth_error': 'Erro no processo de autenticação GitHub.',
-        'github_code_missing': 'Código de autenticação não recebido.',
-        'github_state_missing': 'Estado de autenticação inválido.',
-        'github_invalid_state': 'Estado de autenticação inválido.',
-        'github_token_exchange_failed': 'Falha ao trocar código de autenticação.',
-        'github_user_fetch_failed': 'Falha ao buscar dados do usuário GitHub.',
-        'github_db_error': 'Erro ao salvar conexão GitHub.',
-        'github_internal_error': 'Erro interno ao processar autenticação GitHub.'
-      }
-      
-      const message = errorMessages[error] || 'Erro desconhecido no login.'
-      
-      // Use a microtask to avoid setState in effect
-      Promise.resolve().then(() => {
-        setErrorMessage(message)
-      })
-      
       // Clear error from URL
       window.history.replaceState({}, document.title, window.location.pathname)
     }
