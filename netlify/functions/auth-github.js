@@ -29,7 +29,7 @@ exports.handler = async (event) => {
     // Step 1: Redirect to GitHub OAuth
     if (httpMethod === "GET" && !queryStringParameters?.code) {
       if (!githubClientId) {
-        return json(500, { error: "GITHUB_CLIENT_ID não configurado" });
+        return redirect(`${frontendUrl}?error=github_config_error`);
       }
 
       const redirectUri = `${frontendUrl}/.netlify/functions/auth-github`;
@@ -42,7 +42,7 @@ exports.handler = async (event) => {
     // Step 2: Handle callback with code
     if (httpMethod === "GET" && queryStringParameters?.code) {
       if (!githubClientId || !githubClientSecret) {
-        return json(500, { error: "GitHub OAuth não configurado corretamente" });
+        return redirect(`${frontendUrl}?error=github_config_error`);
       }
 
       const code = queryStringParameters.code;
