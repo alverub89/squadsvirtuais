@@ -112,6 +112,116 @@ CREATE INDEX IF NOT EXISTS idx_squads_workspace
   ON sv.squads(workspace_id);
 ```
 
+### sv.phases
+Phases/stages of the squad's method.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.phases (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  order_index INTEGER NOT NULL,
+  status TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_phases_squad 
+  ON sv.phases(squad_id);
+
+CREATE INDEX IF NOT EXISTS idx_phases_order 
+  ON sv.phases(squad_id, order_index);
+```
+
+### sv.issues
+Issues/tasks within a squad.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.issues (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  status TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_issues_squad 
+  ON sv.issues(squad_id);
+```
+
+### sv.personas
+Personas defined for the squad.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.personas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_personas_squad 
+  ON sv.personas(squad_id);
+
+CREATE INDEX IF NOT EXISTS idx_personas_active 
+  ON sv.personas(squad_id, active);
+```
+
+### sv.decisions
+Key decisions made within the squad.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.decisions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  decision TEXT NOT NULL,
+  created_by_role TEXT,
+  created_by_user_id UUID REFERENCES sv.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_decisions_squad 
+  ON sv.decisions(squad_id);
+
+CREATE INDEX IF NOT EXISTS idx_decisions_created_at 
+  ON sv.decisions(squad_id, created_at DESC);
+```
+
+### sv.squad_members
+Members assigned to a squad with their roles.
+
+```sql
+CREATE TABLE IF NOT EXISTS sv.squad_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id UUID NOT NULL REFERENCES sv.squads(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES sv.users(id) ON DELETE CASCADE,
+  role_code TEXT,
+  role_label TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT squad_members_unique 
+    UNIQUE (squad_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_squad_members_squad 
+  ON sv.squad_members(squad_id);
+
+CREATE INDEX IF NOT EXISTS idx_squad_members_user 
+  ON sv.squad_members(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_squad_members_active 
+  ON sv.squad_members(squad_id, active);
+```
+
 ### sv.github_connections
 GitHub OAuth connections for workspaces.
 
@@ -166,12 +276,18 @@ users (1) ─────< (N) user_identities
          │                            │
          │ squads                     │
          ├─< (N) squads               │
-         │                            │
-         │ connections                │
-         ├─< (N) github_connections   │
-         └─< (N) repo_connections     │
-                                      │
-users (N) ────────────────────────────┘
+         │       │                    │
+         │       ├─< (N) phases       │
+         │       ├─< (N) issues       │
+         │       ├─< (N) personas     │
+         │       ├─< (N) decisions    │
+         │       └─< (N) squad_members >─┐
+         │                            │   │
+         │ connections                │   │
+         ├─< (N) github_connections   │   │
+         └─< (N) repo_connections     │   │
+                                      │   │
+users (N) ────────────────────────────┴───┘
 ```
 
 ## Key Constraints

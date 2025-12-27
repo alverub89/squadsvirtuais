@@ -103,7 +103,11 @@ export default function SquadsList() {
         ) : (
           <div className="squads-grid">
             {squads.map((squad) => (
-              <div key={squad.id} className="squad-card">
+              <div 
+                key={squad.id} 
+                className="squad-card"
+                onClick={() => navigate(`/workspaces/${workspaceId}/squads/${squad.id}`)}
+              >
                 <div className="squad-icon">
                   {squad.name.charAt(0).toUpperCase()}
                 </div>
