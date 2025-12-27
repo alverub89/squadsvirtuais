@@ -183,8 +183,8 @@ exports.handler = async (event) => {
         hasToken: !!token
       });
 
-      const redirectUrl = `${frontendUrl}?token=${encodeURIComponent(token)}`;
-      console.log('[auth-github] REDIRECT URL:', `${frontendUrl}?token=[REDACTED]`);
+      const redirectUrl = `${frontendUrl}/login?token=${encodeURIComponent(token)}`;
+      console.log('[auth-github] REDIRECT URL:', `${frontendUrl}/login?token=[REDACTED]`);
 
       // Redirect to frontend with token
       return redirect(redirectUrl);
