@@ -3,6 +3,9 @@ const { query } = require("./_lib/db");
 const { authenticateRequest } = require("./_lib/auth");
 const { json } = require("./_lib/response");
 
+// Helper to normalize empty strings to null
+const normalizeToNull = (value) => (value && value.trim()) ? value : null;
+
 exports.handler = async (event) => {
   try {
     // Authenticate user
@@ -148,10 +151,10 @@ exports.handler = async (event) => {
           description,
           active
         )
-        VALUES ($1, $2, $3, $4, $5, true)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
         `,
-        [squad_id, role_id || null, workspace_role_id || null, name || null, description || null]
+        [squad_id, role_id || null, workspace_role_id || null, normalizeToNull(name), normalizeToNull(description), true]
       );
 
       console.log("[squad-roles] Squad role ativado:", result.rows[0].id);
@@ -195,13 +198,13 @@ exports.handler = async (event) => {
 
       if (name !== undefined) {
         updates.push(`name = $${paramCount}`);
-        values.push(name || null);
+        values.push(normalizeToNull(name));
         paramCount++;
       }
 
       if (description !== undefined) {
         updates.push(`description = $${paramCount}`);
-        values.push(description || null);
+        values.push(normalizeToNull(description));
         paramCount++;
       }
 
