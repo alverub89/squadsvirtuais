@@ -17,12 +17,12 @@ The issue specifies strict visual style requirements:
 
 ### ✅ Colors - Neutral Palette
 ```css
-- Background: #f8fafc (very light grey)
+- Background: #f8fafc (very light slate)
 - Card: #ffffff (white)
-- Borders: #e5e7eb, #d1d5db (light grey)
+- Borders: #e5e7eb, #d1d5db (light slate)
 - Primary text: #0f172a (dark slate)
-- Secondary text: #64748b, #94a3b8 (grey)
-- Primary button: #475569 (slate, not bright blue)
+- Secondary text: #64748b, #94a3b8 (medium slate)
+- Primary button: #475569 (slate)
 ```
 
 **Result**: ✅ All colors are neutral, no bright or attention-grabbing colors

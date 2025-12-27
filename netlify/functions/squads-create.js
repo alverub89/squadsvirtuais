@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     }
 
     const userId = decoded.userId;
-    console.log("[squads-create] Criando squad para usuário");
+    console.log("[squads-create] Criando squad para usuário:", userId);
 
     // Parse body
     let body;

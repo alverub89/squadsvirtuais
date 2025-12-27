@@ -103,7 +103,7 @@ export default function CreateSquad() {
                   autoFocus
                 />
                 <span className="field-hint">
-                  Use um nome claro que identifique o propósito da squad
+                  Use um nome claro que identifique o propósito da squad.
                 </span>
               </div>
 
@@ -118,7 +118,7 @@ export default function CreateSquad() {
                   disabled={creating}
                 />
                 <span className="field-hint">
-                  Ajuda você e sua equipe a lembrar o contexto desta squad
+                  Ajuda você e sua equipe a lembrar o contexto desta squad.
                 </span>
               </div>
 
