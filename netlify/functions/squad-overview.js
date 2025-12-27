@@ -303,8 +303,9 @@ exports.handler = async (event) => {
         } else {
           summary = d.decision;
         }
-      } catch {
-        // Not JSON, use as-is
+      } catch (error) {
+        // Not JSON or parse error, use as-is
+        console.log('[squad-overview] Failed to parse decision JSON:', error.message);
         summary = d.decision;
       }
       
