@@ -188,6 +188,11 @@ Tabelas principais:
 - `sv.workspaces` - Workspaces (contextos organizacionais)
 - `sv.workspace_members` - Membros dos workspaces
 - `sv.squads` - Squads (unidades de trabalho)
+- `sv.phases` - Fases/etapas das squads
+- `sv.issues` - Issues/tarefas das squads
+- `sv.personas` - Personas definidas nas squads
+- `sv.decisions` - Decisões importantes tomadas nas squads
+- `sv.squad_members` - Membros atribuídos às squads
 
 O banco usa constraints UNIQUE para evitar duplicação e permitir upserts seguros.
 
@@ -198,6 +203,7 @@ Uma **squad** é a unidade central de trabalho do produto. Cada squad:
 - Pertence a um workspace (não existe squad órfã)
 - Organiza o método completo: problema, personas, fases, backlog e integração com repositório
 - Tem um ciclo de vida com estados: `rascunho`, `ativa`, `aguardando_execucao`, `em_revisao`, `concluida`, `pausada`
+- Possui uma tela de detalhes completa com visão geral (overview), timeline, decisões e membros
 
 Para mais informações sobre squads, consulte [docs/squads.md](docs/squads.md).
 
@@ -214,6 +220,38 @@ Workspace (contexto organizacional)
 - **Squad**: Foca em um problema de negócio específico
 
 Apenas membros de um workspace podem criar e visualizar squads nele.
+
+### API de Squads
+
+#### Criar Squad
+**POST** `/squads-create`
+- Cria uma nova squad dentro de um workspace
+- Requer autenticação e membership no workspace
+
+#### Listar Squads
+**GET** `/squads?workspace_id={uuid}`
+- Lista todas as squads de um workspace
+- Requer autenticação e membership no workspace
+
+#### Visualizar Squad (Overview Completo)
+**GET** `/squads/:id/overview`
+- Retorna visão completa da squad com:
+  - Dados básicos da squad
+  - Contadores (issues, fases, membros)
+  - Timeline do método (5 etapas)
+  - Decisões recentes (últimas 5)
+  - Preview dos membros (primeiros 3)
+- Requer autenticação e membership no workspace
+
+#### Editar Squad
+**PATCH** `/squads/:id`
+- Atualiza nome, descrição ou status da squad
+- Requer autenticação e membership no workspace
+
+#### Excluir Squad
+**DELETE** `/squads/:id`
+- Exclui a squad e todos os dados relacionados (cascade)
+- Requer autenticação e membership no workspace
 
 ## 🔒 Segurança
 

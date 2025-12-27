@@ -47,6 +47,15 @@
   transform: translateY(-2px);
 }
 
+.squad-card:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.squad-card:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .squad-icon {
   width: 48px;
   height: 48px;

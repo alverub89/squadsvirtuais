@@ -185,6 +185,137 @@ Authorization: Bearer {token}
 }
 ```
 
+### Visualizar Squad (Overview Completo)
+
+**Endpoint:** `GET /squads/:id/overview`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Resposta de Sucesso (200):**
+```json
+{
+  "squad": {
+    "id": "uuid",
+    "workspaceId": "uuid",
+    "name": "Nome da Squad",
+    "description": "Descrição",
+    "status": "rascunho"
+  },
+  "counts": {
+    "members": 3,
+    "issues": 12,
+    "phase": {
+      "current": 3,
+      "total": 5
+    }
+  },
+  "timeline": [
+    {
+      "key": "problem",
+      "title": "Análise do Problema",
+      "state": "done",
+      "relativeTime": "Há 2 dias"
+    },
+    {
+      "key": "personas",
+      "title": "Definição de Personas",
+      "state": "current",
+      "relativeTime": null
+    }
+  ],
+  "membersPreview": [
+    {
+      "initials": "TL",
+      "name": "João Silva",
+      "role": "Tech Lead",
+      "active": true
+    }
+  ],
+  "recentDecisions": [
+    {
+      "title": "Arquitetura escolhida",
+      "summary": "Monolito modular com clear boundaries",
+      "role": "Tech Lead",
+      "relativeTime": "Há 1 dia"
+    }
+  ]
+}
+```
+
+**Erros:**
+- `401` - Não autenticado
+- `403` - Usuário não é membro do workspace
+- `404` - Squad não encontrada
+- `500` - Erro interno
+
+### Editar Squad
+
+**Endpoint:** `PATCH /squads/:id`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "name": "Novo Nome",
+  "description": "Nova descrição",
+  "status": "ativa"
+}
+```
+
+**Resposta de Sucesso (200):**
+```json
+{
+  "ok": true,
+  "squad": {
+    "id": "uuid",
+    "workspace_id": "uuid",
+    "name": "Novo Nome",
+    "description": "Nova descrição",
+    "status": "ativa",
+    "created_at": "2025-12-27T00:00:00Z",
+    "updated_at": "2025-12-27T01:00:00Z"
+  }
+}
+```
+
+**Erros:**
+- `400` - Dados inválidos
+- `401` - Não autenticado
+- `403` - Usuário não é membro do workspace
+- `404` - Squad não encontrada
+- `500` - Erro interno
+
+### Excluir Squad
+
+**Endpoint:** `DELETE /squads/:id`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Resposta de Sucesso (200):**
+```json
+{
+  "ok": true,
+  "message": "Squad excluída com sucesso"
+}
+```
+
+**Erros:**
+- `401` - Não autenticado
+- `403` - Usuário não é membro do workspace
+- `404` - Squad não encontrada
+- `500` - Erro interno
+
 ## Banco de Dados
 
 ### Tabela: sv.squads
