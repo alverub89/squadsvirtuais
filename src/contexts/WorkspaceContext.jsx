@@ -8,7 +8,7 @@ export function WorkspaceProvider({ children }) {
 
   const selectWorkspace = (workspace) => {
     setActiveWorkspace(workspace)
-    // Store in sessionStorage for persistence during navigation
+    // Store in sessionStorage for session-level persistence (cleared when tab closes)
     if (workspace) {
       sessionStorage.setItem('activeWorkspace', JSON.stringify(workspace))
     } else {

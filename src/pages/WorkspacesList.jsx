@@ -19,6 +19,7 @@ export default function WorkspacesList() {
     description: '',
     type: ''
   })
+  const [formError, setFormError] = useState(null)
 
   const loadWorkspaces = async () => {
     try {
@@ -52,12 +53,13 @@ export default function WorkspacesList() {
     e.preventDefault()
     
     if (!formData.name.trim()) {
-      alert('Nome do workspace é obrigatório')
+      setFormError('Nome do workspace é obrigatório')
       return
     }
 
     try {
       setCreating(true)
+      setFormError(null)
       const res = await fetch('/.netlify/functions/workspaces-create', {
         method: 'POST',
         headers: {
@@ -80,7 +82,7 @@ export default function WorkspacesList() {
       }
     } catch (err) {
       console.error('Error creating workspace:', err)
-      alert('Erro ao criar workspace. Tente novamente.')
+      setFormError('Erro ao criar workspace. Tente novamente.')
     } finally {
       setCreating(false)
     }
@@ -131,6 +133,21 @@ export default function WorkspacesList() {
           <div className="modal-overlay" onClick={() => !creating && setShowCreateForm(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <h2>Criar Novo Workspace</h2>
+              
+              {formError && (
+                <div className="error-message" style={{
+                  backgroundColor: '#fee',
+                  border: '1px solid #c33',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  marginBottom: '16px',
+                  color: '#c33',
+                  fontSize: '14px'
+                }}>
+                  {formError}
+                </div>
+              )}
+              
               <form onSubmit={handleCreateWorkspace}>
                 <div className="form-group">
                   <label htmlFor="name">Nome *</label>

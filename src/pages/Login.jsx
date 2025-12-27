@@ -23,7 +23,17 @@ const ERROR_MESSAGES = {
 export default function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
-  const [errorMessage, setErrorMessage] = useState(null)
+  
+  // Initialize error message from URL params on mount
+  const [errorMessage, setErrorMessage] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const error = urlParams.get('error')
+    if (error) {
+      console.error('Erro no login:', error)
+      return ERROR_MESSAGES[error] || 'Erro desconhecido no login.'
+    }
+    return null
+  })
 
   useEffect(() => {
     // Handle OAuth callback with token from GitHub
@@ -38,11 +48,9 @@ export default function Login() {
       window.history.replaceState({}, document.title, window.location.pathname)
       // Redirect to workspaces
       navigate('/workspaces')
-    } else if (error) {
-      console.error('Erro no login:', error)
-      const message = ERROR_MESSAGES[error] || 'Erro desconhecido no login.'
-      // Set error message outside of effect
-      setTimeout(() => setErrorMessage(message), 0)
+    }
+    
+    if (error) {
       // Clear error from URL
       window.history.replaceState({}, document.title, window.location.pathname)
     }

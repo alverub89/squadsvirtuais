@@ -44,15 +44,15 @@ export default function SquadsList() {
   }
 
   useEffect(() => {
-    // If no workspace is selected, redirect to workspaces list
-    if (!activeWorkspace && !workspaceId) {
+    // If no workspace ID in URL, redirect to workspaces list
+    if (!workspaceId) {
       navigate('/workspaces')
       return
     }
 
     loadSquads()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId, token, activeWorkspace, navigate])
+  }, [workspaceId, token, navigate])
 
   if (loading) {
     return (
