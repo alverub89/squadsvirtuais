@@ -412,9 +412,13 @@ export default function ProblemStatementCard({ squadId, onUpdate }) {
         <span>
           Última atualização: {formatRelativeTime(problemStatement.updated_at)}
         </span>
-        <a className="problem-statement-meta-link" onClick={toggleHistory}>
+        <button 
+          className="problem-statement-meta-link" 
+          onClick={toggleHistory}
+          type="button"
+        >
           {showHistory ? 'Ocultar histórico' : 'Ver histórico'}
-        </a>
+        </button>
       </div>
 
       {/* History */}

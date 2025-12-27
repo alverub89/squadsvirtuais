@@ -67,7 +67,7 @@ exports.handler = async (event) => {
     
     // Apply filter if specified
     if (filter === "problem_statement") {
-      queryText += ` AND title LIKE '%Problem Statement%'`;
+      queryText += ` AND (title = 'Problem Statement' OR title = 'Problem Statement atualizado')`;
     }
     
     queryText += ` ORDER BY created_at DESC LIMIT 50`;
