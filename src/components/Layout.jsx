@@ -14,11 +14,13 @@ export default function Layout({ children }) {
   const [workspaces, setWorkspaces] = useState([])
   const [loadingWorkspaces, setLoadingWorkspaces] = useState(false)
   const [workspacesError, setWorkspacesError] = useState(null)
+  const [workspacesCached, setWorkspacesCached] = useState(false)
 
   // Fetch workspaces when menu is opened
   useEffect(() => {
     const loadWorkspaces = async () => {
-      if (!showWorkspaceMenu || !token) return
+      // Skip if menu is closed, no token, or already cached
+      if (!showWorkspaceMenu || !token || workspacesCached) return
       
       try {
         setLoadingWorkspaces(true)
@@ -35,6 +37,7 @@ export default function Layout({ children }) {
 
         const data = await res.json()
         setWorkspaces(data.workspaces || [])
+        setWorkspacesCached(true)
       } catch (err) {
         console.error('Error loading workspaces:', err)
         setWorkspacesError('Erro ao carregar workspaces')
@@ -44,7 +47,7 @@ export default function Layout({ children }) {
     }
 
     loadWorkspaces()
-  }, [showWorkspaceMenu, token])
+  }, [showWorkspaceMenu, token, workspacesCached])
 
   const handleLogout = () => {
     logout()
@@ -113,10 +116,10 @@ export default function Layout({ children }) {
                               className={`workspace-menu-item ${workspace.id === activeWorkspace?.id ? 'active' : ''}`}
                             >
                               <div className="workspace-menu-avatar">
-                                {workspace.name.charAt(0).toUpperCase()}
+                                {workspace.name ? workspace.name.charAt(0).toUpperCase() : '?'}
                               </div>
                               <div className="workspace-menu-info">
-                                <span className="workspace-menu-name">{workspace.name}</span>
+                                <span className="workspace-menu-name">{workspace.name || 'Sem nome'}</span>
                                 {workspace.type && (
                                   <span className="workspace-menu-type">{workspace.type}</span>
                                 )}
