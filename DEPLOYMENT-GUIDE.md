@@ -83,9 +83,15 @@ Should return `true`.
 ### 2. Deploy to Netlify
 
 The feature is ready to deploy. Simply merge this PR and Netlify will automatically:
-- Build the frontend
+- Build the frontend with `npm run build`
+- Deploy to the `dist/` directory
 - Deploy the functions
 - Update the site
+
+**Netlify Configuration**: The `netlify.toml` file is configured for SPA routing:
+- All routes are redirected to `index.html` (status 200 rewrite)
+- Netlify Functions are preserved at `/.netlify/functions/*`
+- This prevents 404 errors when refreshing or accessing routes directly
 
 **No environment variables changes needed** - all existing variables are sufficient.
 
@@ -99,6 +105,10 @@ After deployment, test:
 4. **Fill form**: Enter squad name
 5. **Submit**: Create the squad
 6. **Verify**: Squad appears in list with status "rascunho"
+7. **Test SPA Routing**: 
+   - Refresh the page on any route (e.g., `/workspaces/:id/squads`) - should NOT return 404
+   - Copy a deep route URL and open in new tab - should work correctly
+   - All Netlify Functions should continue working at `/.netlify/functions/*`
 
 ### 4. Test Error Cases
 
