@@ -36,7 +36,7 @@ exports.handler = async (event) => {
     // Step 1: Redirect to GitHub OAuth
     if (httpMethod === "GET" && !queryStringParameters?.code) {
       if (!githubClientId) {
-        return redirect(`${frontendUrl}?error=github_config_error`);
+        return redirect(`${frontendUrl}/login?error=github_config_error`);
       }
 
       const redirectUri = `${frontendUrl}/.netlify/functions/auth-github`;
@@ -55,7 +55,7 @@ exports.handler = async (event) => {
     // Step 2: Handle callback with code
     if (httpMethod === "GET" && queryStringParameters?.code) {
       if (!githubClientId || !githubClientSecret) {
-        return redirect(`${frontendUrl}?error=github_config_error`);
+        return redirect(`${frontendUrl}/login?error=github_config_error`);
       }
 
       const code = queryStringParameters.code;
@@ -83,7 +83,7 @@ exports.handler = async (event) => {
 
       if (!tokenData.access_token) {
         console.error('[auth-github] Falha ao obter access_token', tokenData);
-        return redirect(`${frontendUrl}?error=github_auth_failed`);
+        return redirect(`${frontendUrl}/login?error=github_auth_failed`);
       }
 
       const accessToken = tokenData.access_token;
@@ -127,7 +127,7 @@ exports.handler = async (event) => {
 
       if (!email) {
         console.error('[auth-github] Email não disponível para o usuário');
-        return redirect(`${frontendUrl}?error=github_email_missing`);
+        return redirect(`${frontendUrl}/login?error=github_email_missing`);
       }
 
       const provider = "github";
@@ -183,8 +183,8 @@ exports.handler = async (event) => {
         hasToken: !!token
       });
 
-      const redirectUrl = `${frontendUrl}?token=${encodeURIComponent(token)}`;
-      console.log('[auth-github] REDIRECT URL:', `${frontendUrl}?token=[REDACTED]`);
+      const redirectUrl = `${frontendUrl}/login?token=${encodeURIComponent(token)}`;
+      console.log('[auth-github] REDIRECT URL:', `${frontendUrl}/login?token=[REDACTED]`);
 
       // Redirect to frontend with token
       return redirect(redirectUrl);
@@ -193,6 +193,6 @@ exports.handler = async (event) => {
     return json(405, { error: "Method Not Allowed" });
   } catch (e) {
     console.error("Erro no auth-github:", e);
-    return redirect(`${frontendUrl}?error=internal_error`);
+    return redirect(`${frontendUrl}/login?error=internal_error`);
   }
 };

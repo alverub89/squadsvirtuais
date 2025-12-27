@@ -70,7 +70,7 @@ Este documento fornece orientações para diagnosticar o problema onde o login c
   tokenLength: 200
 }
 
-[auth-github] REDIRECT URL: https://squadsvirtuais.com?token=...
+[auth-github] REDIRECT URL: https://squadsvirtuais.com/login?token=...
 ```
 
 ### Logs em `auth-github-callback.js`
@@ -114,7 +114,7 @@ Se os logs mostram:
 [auth-github] INICIO { hasCode: true, ... }
 [auth-github] Processando callback com code { ... }
 [auth-github] JWT gerado { ... }
-[auth-github] REDIRECT URL: https://squadsvirtuais.com?token=...
+[auth-github] REDIRECT URL: https://squadsvirtuais.com/login?token=...
 ```
 
 **Diagnóstico:** O fluxo OAuth está correto no backend. O problema pode estar no frontend (Login.jsx) não processando o token corretamente.
