@@ -98,9 +98,78 @@
 .form-actions {
   display: flex;
   gap: 12px;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding-top: 24px;
   border-top: 1px solid #e5e7eb;
+}
+
+.form-actions-right {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+/* Associations List */
+.associations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.association-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.association-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.association-info {
+  flex: 1;
+}
+
+.association-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.association-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 16px;
+}
+
+.loading {
+  color: #64748b;
+}
+
+.error {
+  color: #dc2626;
+  margin-bottom: 20px;
 }
 
 .btn {
@@ -154,10 +223,15 @@
   }
 
   .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions-right {
     flex-direction: column-reverse;
   }
 
-  .form-actions .btn {
+  .form-actions .btn,
+  .form-actions-right .btn {
     width: 100%;
   }
 }

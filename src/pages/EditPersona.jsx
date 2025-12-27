@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/Layout'
 import './CreatePersona.css'
 
-export default function CreatePersona() {
-  const { workspaceId } = useParams()
+export default function EditPersona() {
+  const { workspaceId, personaId } = useParams()
   const { token } = useAuth()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
     type: 'cliente',
@@ -16,44 +18,108 @@ export default function CreatePersona() {
     goals: '',
     pain_points: '',
     behaviors: '',
-    influence_level: ''
+    influence_level: '',
+    active: true
   })
+  const [squadAssociations, setSquadAssociations] = useState([])
+
+  useEffect(() => {
+    const loadPersona = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch(
+          `/.netlify/functions/personas/${personaId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        )
+
+        if (!res.ok) {
+          throw new Error('Erro ao carregar persona')
+        }
+
+        const data = await res.json()
+        setFormData({
+          name: data.persona.name || '',
+          type: data.persona.type || 'cliente',
+          subtype: data.persona.subtype || '',
+          goals: data.persona.goals || '',
+          pain_points: data.persona.pain_points || '',
+          behaviors: data.persona.behaviors || '',
+          influence_level: data.persona.influence_level || '',
+          active: data.persona.active !== false
+        })
+        setSquadAssociations(data.squad_associations || [])
+      } catch (err) {
+        console.error('Error loading persona:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (personaId && token) {
+      loadPersona()
+    }
+  }, [personaId, token])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Validate required fields
     if (!formData.name.trim()) {
       alert('Nome é obrigatório')
       return
     }
 
     try {
-      setLoading(true)
-      const res = await fetch('/.netlify/functions/personas', {
-        method: 'POST',
+      setSaving(true)
+      const res = await fetch(`/.netlify/functions/personas/${personaId}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          workspace_id: workspaceId,
-          ...formData
-        })
+        body: JSON.stringify(formData)
       })
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Erro ao criar persona')
+        throw new Error(data.error || 'Erro ao atualizar persona')
       }
 
-      // Success - redirect to personas list
       navigate(`/workspaces/${workspaceId}/personas`)
     } catch (err) {
-      console.error('Error creating persona:', err)
+      console.error('Error updating persona:', err)
       alert(err.message)
     } finally {
-      setLoading(false)
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja excluir esta persona? Esta ação não pode ser desfeita.')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/.netlify/functions/personas/${personaId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erro ao excluir persona')
+      }
+
+      navigate(`/workspaces/${workspaceId}/personas`)
+    } catch (err) {
+      console.error('Error deleting persona:', err)
+      alert(err.message)
     }
   }
 
@@ -65,13 +131,39 @@ export default function CreatePersona() {
     }))
   }
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="create-persona-container">
+          <div className="loading">Carregando...</div>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="create-persona-container">
+          <div className="error">{error}</div>
+          <button 
+            onClick={() => navigate(`/workspaces/${workspaceId}/personas`)} 
+            className="btn btn-primary"
+          >
+            Voltar para Personas
+          </button>
+        </div>
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
       <div className="create-persona-container">
         <div className="create-persona-header">
-          <h1>Nova Persona</h1>
+          <h1>Editar Persona</h1>
           <p className="create-persona-subtitle">
-            Crie uma persona digital para validar decisões do produto
+            Edite as informações da persona digital
           </p>
         </div>
 
@@ -200,22 +292,52 @@ export default function CreatePersona() {
             </div>
           </div>
 
+          {/* Squad Associations Section */}
+          {squadAssociations.length > 0 && (
+            <div className="form-section">
+              <h2>Squads Associadas</h2>
+              <div className="associations-list">
+                {squadAssociations.map((assoc) => (
+                  <div key={assoc.id} className="association-item">
+                    <div className="association-icon">🏆</div>
+                    <div className="association-info">
+                      <div className="association-name">{assoc.squad_name}</div>
+                      {assoc.problem_statement && (
+                        <div className="association-subtitle">{assoc.problem_statement}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="form-actions">
             <button 
               type="button" 
-              onClick={() => navigate(`/workspaces/${workspaceId}/personas`)}
-              className="btn btn-secondary"
-              disabled={loading}
+              onClick={handleDelete}
+              className="btn btn-danger"
+              disabled={saving}
             >
-              Cancelar
+              Excluir Persona
             </button>
-            <button 
-              type="submit" 
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? 'Criando...' : 'Criar Persona'}
-            </button>
+            <div className="form-actions-right">
+              <button 
+                type="button" 
+                onClick={() => navigate(`/workspaces/${workspaceId}/personas`)}
+                className="btn btn-secondary"
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                className="btn btn-primary"
+                disabled={saving}
+              >
+                {saving ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -181,7 +181,8 @@ export default function PersonasList() {
             {filteredPersonas.map((persona) => (
               <div 
                 key={persona.id} 
-                className="persona-card-item"
+                className={`persona-card-item ${!persona.active ? 'inactive' : ''}`}
+                onClick={() => navigate(`/workspaces/${workspaceId}/personas/${persona.id}/edit`)}
               >
                 <div className="persona-card-header-row">
                   <div className="persona-icon">
@@ -205,7 +206,7 @@ export default function PersonasList() {
                     )}
                   </div>
                   <div className="persona-toggle">
-                    <label className="toggle-switch">
+                    <label className="toggle-switch" onClick={(e) => e.stopPropagation()}>
                       <input 
                         type="checkbox" 
                         checked={persona.active}

@@ -72,10 +72,32 @@
   border-radius: 12px;
   padding: 20px;
   transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
 }
 
 .persona-card-item:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.persona-card-item.inactive {
+  background: #f8fafc;
+  opacity: 0.7;
+  border-color: #cbd5e1;
+}
+
+.persona-card-item.inactive::before {
+  content: 'INATIVA';
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
 }
 
 .persona-card-header-row {
