@@ -680,17 +680,51 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
     case 'phase':
       // Data is an array of phases
       const phases = Array.isArray(data) ? data : [data];
+      
+      console.log(`[suggestion-approvals] Processing ${phases.length} phases for squad ${squadId}`);
+      
+      // Check for existing phases to avoid duplicates
+      const existingPhasesResult = await query(
+        `SELECT name, order_index FROM sv.phases WHERE squad_id = $1`,
+        [squadId]
+      );
+      
+      const existingPhases = existingPhasesResult.rows;
+      console.log(`[suggestion-approvals] Found ${existingPhases.length} existing phases`);
+      
+      // Build a set of existing phase names (case-insensitive) for quick lookup
+      const existingPhaseNames = new Set(
+        existingPhases.map(p => p.name.toLowerCase().trim())
+      );
+      
+      // Insert only phases that don't already exist
+      let insertedCount = 0;
       for (let i = 0; i < phases.length; i++) {
         const phase = phases[i];
+        const phaseName = phase.name.trim();
+        const phaseNameLower = phaseName.toLowerCase();
+        
+        // Skip if phase with same name already exists
+        if (existingPhaseNames.has(phaseNameLower)) {
+          console.log(`[suggestion-approvals] Skipping duplicate phase: ${phaseName}`);
+          continue;
+        }
+        
+        // Insert new phase
         await query(
           `INSERT INTO sv.phases (
             squad_id,
             name,
             order_index
           ) VALUES ($1, $2, $3)`,
-          [squadId, phase.name, i + 1]
+          [squadId, phaseName, i + 1]
         );
+        
+        insertedCount++;
+        console.log(`[suggestion-approvals] Inserted phase: ${phaseName} with order ${i + 1}`);
       }
+      
+      console.log(`[suggestion-approvals] Phase persistence completed: ${insertedCount} new phases inserted, ${phases.length - insertedCount} duplicates skipped`);
       break;
 
     case 'critical_unknown':
