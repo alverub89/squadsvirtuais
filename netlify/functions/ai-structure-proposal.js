@@ -147,6 +147,7 @@ async function generateProposal(event, userId) {
     existing_personas: personasResult.rows.length > 0
       ? personasResult.rows.map(p => `- ${p.name} (${p.type}): ${p.goals || ""}`).join("\n")
       : null,
+    input_snapshot: JSON.stringify(inputSnapshot, null, 2),
   };
 
   // Render prompt

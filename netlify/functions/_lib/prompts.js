@@ -2,6 +2,15 @@
 const { query } = require("./db");
 
 /**
+ * Helper function to check if a value should be considered "present" in template conditionals
+ * @param {*} value - Value to check
+ * @returns {boolean} True if value is present (not null, undefined, empty string, or false)
+ */
+function isPresent(value) {
+  return value != null && value !== "" && value !== false;
+}
+
+/**
  * Get active prompt version for a given prompt name
  * @param {string} promptName - Name of the prompt
  * @returns {Promise<Object|null>} Active prompt version or null if not found
@@ -30,8 +39,28 @@ async function getActivePrompt(promptName) {
       [promptName]
     );
 
+    console.log("[prompts] Query executed OK, rows returned:", result.rows.length);
+
     if (result.rows.length === 0) {
       console.log("[prompts] No active prompt found for:", promptName);
+      
+      // Additional diagnostic: check if prompt exists but no active version
+      const checkPrompt = await query(
+        `SELECT id, name FROM sv.ai_prompts WHERE name = $1`,
+        [promptName]
+      );
+      
+      if (checkPrompt.rows.length > 0) {
+        console.warn("[prompts] Prompt exists but no active version found!");
+        const versions = await query(
+          `SELECT version, is_active FROM sv.ai_prompt_versions WHERE prompt_id = $1`,
+          [checkPrompt.rows[0].id]
+        );
+        console.warn("[prompts] Existing versions:", JSON.stringify(versions.rows));
+      } else {
+        console.warn("[prompts] Prompt does not exist in database!");
+      }
+      
       return null;
     }
 
@@ -55,7 +84,8 @@ function renderPrompt(template, variables) {
 
   // Replace simple variables {{variable}}
   Object.keys(variables).forEach((key) => {
-    const value = variables[key] || "";
+    // Use empty string for null/undefined values, convert all other values to string
+    const value = variables[key] != null ? String(variables[key]) : "";
     const regex = new RegExp(`{{${key}}}`, "g");
     rendered = rendered.replace(regex, value);
   });
@@ -63,7 +93,7 @@ function renderPrompt(template, variables) {
   // Handle conditional blocks {{#if variable}}...{{/if}}
   // This is a simplified implementation - only handles present/not present
   rendered = rendered.replace(/{{#if\s+(\w+)}}([\s\S]*?){{\/if}}/g, (match, varName, content) => {
-    return variables[varName] ? content : "";
+    return isPresent(variables[varName]) ? content : "";
   });
 
   // Check for any remaining unresolved variables and log warning
@@ -95,11 +125,12 @@ async function logPromptExecution({
   userId,
 }) {
   try {
+    // Note: proposal_id column may not exist in all database versions
+    // Logging without it to ensure compatibility
     await query(
       `
       INSERT INTO sv.ai_prompt_executions (
         prompt_version_id,
-        proposal_id,
         workspace_id,
         input_tokens,
         output_tokens,
@@ -109,11 +140,10 @@ async function logPromptExecution({
         error_message,
         executed_by_user_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `,
       [
         promptVersionId,
-        proposalId,
         workspaceId,
         inputTokens,
         outputTokens,
