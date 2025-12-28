@@ -39,6 +39,7 @@ export default function SuggestionApprovalModal({
       }
 
       if (onApprove) onApprove(suggestion.id, editedPayload)
+      if (onClose) onClose()
     } catch (err) {
       console.error('Error approving suggestion:', err)
       setError(err.message || 'Erro ao aprovar sugestão')
@@ -70,7 +71,10 @@ export default function SuggestionApprovalModal({
         throw new Error('Erro ao rejeitar sugestão')
       }
 
+      // Close the rejection modal and return to the previous flow
       if (onReject) onReject(suggestion.id, rejectReason)
+      setShowRejectReason(false)
+      if (onClose) onClose()
     } catch (err) {
       console.error('Error rejecting suggestion:', err)
       setError(err.message || 'Erro ao rejeitar sugestão')
