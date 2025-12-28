@@ -183,17 +183,15 @@ export default function SquadMemberRoles() {
   return (
     <Layout>
       <div className="squad-member-roles-container">
+        <button 
+          onClick={() => navigate(`/workspaces/${workspaceId}/squads/${squadId}`)}
+          className="btn-back"
+        >
+          ← Voltar
+        </button>
         <div className="squad-member-roles-header">
-          <div>
-            <button 
-              onClick={() => navigate(`/workspaces/${workspaceId}/squads/${squadId}`)}
-              className="btn-back"
-            >
-              ← Voltar
-            </button>
-            <h1>Atribuição de Roles</h1>
-            <p>Defina qual especialidade cada membro possui nesta squad</p>
-          </div>
+          <h1>Atribuição de Roles</h1>
+          <p className="squad-member-roles-subtitle">Defina qual especialidade cada membro possui nesta squad</p>
         </div>
 
         {squadRoles.length === 0 ? (

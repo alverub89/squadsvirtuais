@@ -131,12 +131,10 @@ export default function PersonasList() {
     <Layout>
       <div className="personas-page-container">
         <div className="personas-page-header">
-          <div>
-            <h1>Personas Digitais</h1>
-            <p className="personas-subtitle">Personas que validam as decisões do produto</p>
-          </div>
+          <h1>Personas Digitais</h1>
+          <p className="personas-subtitle">Personas que validam as decisões do produto</p>
           <button 
-            className="btn btn-primary"
+            className="btn btn-primary btn-large"
             onClick={() => navigate(`/workspaces/${workspaceId}/personas/create`)}
           >
             + Nova Persona

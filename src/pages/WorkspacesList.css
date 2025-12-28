@@ -5,18 +5,21 @@
 }
 
 .workspaces-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
 }
 
 .workspaces-header h1 {
   font-size: 28px;
-  margin: 0;
+  margin: 0 0 8px 0;
   color: #0f172a;
+  font-weight: 700;
+}
+
+.workspaces-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
 }
 
 .workspaces-grid {

@@ -121,9 +121,10 @@ export default function WorkspacesList() {
       <div className="workspaces-container">
         <div className="workspaces-header">
           <h1>Seus Workspaces</h1>
+          <p className="workspaces-subtitle">Escolha um workspace para começar a trabalhar</p>
           <button 
             onClick={() => setShowCreateForm(true)} 
-            className="btn btn-primary"
+            className="btn btn-primary btn-large"
           >
             + Criar Workspace
           </button>

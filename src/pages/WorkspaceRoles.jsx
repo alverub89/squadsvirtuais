@@ -236,18 +236,16 @@ export default function WorkspaceRoles() {
   return (
     <Layout>
       <div className="workspace-roles-container">
+        <button 
+          onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
+          className="btn-back"
+        >
+          ← Voltar
+        </button>
         <div className="workspace-roles-header">
-          <div>
-            <button 
-              onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
-              className="btn-back"
-            >
-              ← Voltar
-            </button>
-            <h1>Gerenciar Roles</h1>
-            <p>Defina especialidades disponíveis para este workspace</p>
-          </div>
-          <button className="btn btn-primary" onClick={openCreateModal}>
+          <h1>Gerenciar Roles</h1>
+          <p className="workspace-roles-subtitle">Defina especialidades disponíveis para este workspace</p>
+          <button className="btn btn-primary btn-large" onClick={openCreateModal}>
             + Criar Role
           </button>
         </div>

@@ -81,20 +81,16 @@ export default function SquadsList() {
     <Layout>
       <div className="squads-container">
         <div className="squads-header">
-          <div>
-            <h1>{activeWorkspace?.name || 'Squads'}</h1>
-            {activeWorkspace?.description && (
-              <p className="workspace-description">{activeWorkspace.description}</p>
-            )}
-          </div>
-          <div className="header-actions">
-            <button 
-              className="btn btn-primary"
-              onClick={() => navigate(`/workspaces/${workspaceId}/squads/create`)}
-            >
-              + Criar Squad
-            </button>
-          </div>
+          <h1>{activeWorkspace?.name || 'Squads'}</h1>
+          <p className="squads-subtitle">
+            {activeWorkspace?.description || 'Gerencie seus squads'}
+          </p>
+          <button 
+            className="btn btn-primary btn-large"
+            onClick={() => navigate(`/workspaces/${workspaceId}/squads/create`)}
+          >
+            + Criar Squad
+          </button>
         </div>
 
         {squads.length === 0 ? (
