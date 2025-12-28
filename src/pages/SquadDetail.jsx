@@ -19,6 +19,9 @@ export default function SquadDetail() {
   const [editForm, setEditForm] = useState({ name: '', description: '', status: '' })
   const [selectedDecision, setSelectedDecision] = useState(null)
 
+  // Number of members shown in the preview before "Ver todos" button
+  const MEMBERS_PREVIEW_LIMIT = 3
+
   const loadSquadOverview = async () => {
     try {
       setLoading(true)
@@ -320,33 +323,35 @@ export default function SquadDetail() {
 
           {/* Sidebar */}
           <div className="sidebar">
-            {/* Members Card */}
-            <div className="sidebar-card">
-              <div className="sidebar-card-header">
-                <h3>Membros da Squad</h3>
-                {counts.members > 0 && (
-                  <button className="btn-link">Ver todos →</button>
+            {/* Members Card - Only show if there are members OR show with better empty state */}
+            {(membersPreview.length > 0 || counts.members > 0) && (
+              <div className="sidebar-card">
+                <div className="sidebar-card-header">
+                  <h3>Membros da Squad</h3>
+                  {counts.members > MEMBERS_PREVIEW_LIMIT && (
+                    <button className="btn-link">Ver todos →</button>
+                  )}
+                </div>
+                {membersPreview.length === 0 ? (
+                  <p className="empty-text">Nenhum membro atribuído</p>
+                ) : (
+                  <div className="members-list">
+                    {membersPreview.map((member, index) => (
+                      <div key={index} className="member-item">
+                        <div className="member-avatar-wrapper">
+                          <div className="member-avatar">{member.initials}</div>
+                          {member.online && <div className="member-status-indicator"></div>}
+                        </div>
+                        <div className="member-info">
+                          <div className="member-name">{member.name}</div>
+                          <div className="member-role">{member.role}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-              {membersPreview.length === 0 ? (
-                <p className="empty-text">Nenhum membro atribuído</p>
-              ) : (
-                <div className="members-list">
-                  {membersPreview.map((member, index) => (
-                    <div key={index} className="member-item">
-                      <div className="member-avatar-wrapper">
-                        <div className="member-avatar">{member.initials}</div>
-                        {member.online && <div className="member-status-indicator"></div>}
-                      </div>
-                      <div className="member-info">
-                        <div className="member-name">{member.name}</div>
-                        <div className="member-role">{member.role}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Decisions Card */}
             <div className="sidebar-card">
