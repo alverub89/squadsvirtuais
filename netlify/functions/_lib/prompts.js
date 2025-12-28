@@ -2,6 +2,15 @@
 const { query } = require("./db");
 
 /**
+ * Helper function to check if a value should be considered "present" in template conditionals
+ * @param {*} value - Value to check
+ * @returns {boolean} True if value is present (not null, undefined, empty string, or false)
+ */
+function isPresent(value) {
+  return value != null && value !== "" && value !== false;
+}
+
+/**
  * Get active prompt version for a given prompt name
  * @param {string} promptName - Name of the prompt
  * @returns {Promise<Object|null>} Active prompt version or null if not found
@@ -73,12 +82,9 @@ async function getActivePrompt(promptName) {
 function renderPrompt(template, variables) {
   let rendered = template;
 
-  // Helper function to check if a value is "present" (not null, undefined, empty string, or false)
-  const isPresent = (value) => value != null && value !== "" && value !== false;
-
   // Replace simple variables {{variable}}
   Object.keys(variables).forEach((key) => {
-    // Use empty string for null/undefined, convert everything else to string
+    // Use empty string for null/undefined values, convert all other values to string
     const value = variables[key] != null ? String(variables[key]) : "";
     const regex = new RegExp(`{{${key}}}`, "g");
     rendered = rendered.replace(regex, value);
