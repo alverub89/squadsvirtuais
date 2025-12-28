@@ -73,7 +73,6 @@ export default function SuggestionApprovalModal({
 
       // Close the rejection modal and return to the previous flow
       setShowRejectReason(false)
-      
       if (onReject) onReject(suggestion.id, rejectReason)
       if (onClose) onClose()
     } catch (err) {
