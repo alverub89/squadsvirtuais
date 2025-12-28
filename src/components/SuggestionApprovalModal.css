@@ -1,0 +1,348 @@
+/* Base styles for suggestion approval modals */
+.suggestion-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.suggestion-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.suggestion-modal-header {
+  padding: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.suggestion-modal-header-content {
+  flex: 1;
+}
+
+.suggestion-modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.suggestion-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.suggestion-modal-subtitle {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.suggestion-modal-close {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.suggestion-modal-close:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.suggestion-modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.suggestion-modal-error {
+  padding: 1rem;
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  color: #991b1b;
+  font-size: 0.875rem;
+}
+
+.suggestion-modal-error strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.suggestion-modal-info-box {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.suggestion-modal-info-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.suggestion-modal-info-content {
+  flex: 1;
+}
+
+.suggestion-modal-info-content strong {
+  display: block;
+  color: #1e40af;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.suggestion-modal-info-content p {
+  color: #1e40af;
+  font-size: 0.813rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.suggestion-modal-section {
+  margin-bottom: 1.5rem;
+}
+
+.suggestion-modal-section:last-child {
+  margin-bottom: 0;
+}
+
+.suggestion-modal-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.suggestion-modal-field {
+  margin-bottom: 1rem;
+}
+
+.suggestion-modal-field:last-child {
+  margin-bottom: 0;
+}
+
+.suggestion-modal-field-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.suggestion-modal-field-value {
+  color: #111827;
+  font-size: 0.938rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.suggestion-modal-field-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.suggestion-modal-field-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.suggestion-modal-field-list li:last-child {
+  border-bottom: none;
+}
+
+.suggestion-modal-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.suggestion-modal-card:last-child {
+  margin-bottom: 0;
+}
+
+.suggestion-modal-card-title {
+  font-size: 0.938rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.suggestion-modal-card-text {
+  color: #4b5563;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.suggestion-modal-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.suggestion-modal-button {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.suggestion-modal-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.suggestion-modal-button-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.suggestion-modal-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
+}
+
+.suggestion-modal-button-secondary {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.suggestion-modal-button-secondary:hover:not(:disabled) {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.suggestion-modal-button-danger {
+  background: white;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+}
+
+.suggestion-modal-button-danger:hover:not(:disabled) {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* Reject reason modal */
+.reject-reason-modal {
+  max-width: 500px;
+}
+
+.reject-reason-prompt {
+  color: #374151;
+  font-size: 0.938rem;
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+}
+
+.reject-reason-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: #111827;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.reject-reason-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.reject-reason-textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .suggestion-modal-overlay {
+    padding: 1rem;
+  }
+
+  .suggestion-modal {
+    max-width: 100%;
+  }
+
+  .suggestion-modal-header,
+  .suggestion-modal-body,
+  .suggestion-modal-footer {
+    padding: 1.5rem;
+  }
+
+  .suggestion-modal-footer {
+    flex-direction: column;
+  }
+
+  .suggestion-modal-button {
+    width: 100%;
+  }
+}
