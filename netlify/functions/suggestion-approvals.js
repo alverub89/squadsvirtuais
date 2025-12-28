@@ -399,9 +399,12 @@ async function rejectSuggestion(event, suggestionId, userId) {
  * Example: "Tech Lead" -> "tech_lead"
  */
 function generateCodeFromLabel(label) {
-  if (!label) return 'unknown_role';
+  if (!label) {
+    // Use timestamp to ensure uniqueness for empty labels
+    return `unknown_role_${Date.now()}`;
+  }
   
-  return label
+  const code = label
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
@@ -409,6 +412,13 @@ function generateCodeFromLabel(label) {
     .replace(/-+/g, '_') // Replace hyphens with underscores
     .replace(/_+/g, '_') // Replace multiple underscores with single
     .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+  
+  // If result is empty (only special chars), use fallback with timestamp
+  if (!code) {
+    return `unknown_role_${Date.now()}`;
+  }
+  
+  return code;
 }
 
 /**
