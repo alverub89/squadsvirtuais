@@ -22,6 +22,20 @@ async function getActivePrompt(promptName) {
   try {
     console.log("[prompts] Getting active prompt:", promptName);
 
+    // First check if max_tokens column exists in the table
+    const columnsResult = await query(
+      `SELECT column_name FROM information_schema.columns 
+       WHERE table_schema = 'sv' AND table_name = 'ai_prompt_versions'`,
+      []
+    );
+    const columns = columnsResult.rows.map(r => r.column_name);
+    const hasMaxTokens = columns.includes('max_tokens') || columns.includes('max_output_tokens');
+    
+    // Build query dynamically based on available columns
+    const maxTokensSelect = hasMaxTokens 
+      ? `, COALESCE(pv.max_tokens, pv.max_output_tokens) as max_tokens` 
+      : '';
+    
     const result = await query(
       `
       SELECT 
@@ -34,6 +48,7 @@ async function getActivePrompt(promptName) {
         pv.temperature,
         p.name as prompt_name,
         p.category
+        ${maxTokensSelect}
       FROM sv.ai_prompt_versions pv
       JOIN sv.ai_prompts p ON p.id = pv.prompt_id
       WHERE p.name = $1 AND pv.is_active = true
