@@ -400,22 +400,22 @@ async function rejectSuggestion(event, suggestionId, userId) {
  */
 function generateCodeFromLabel(label) {
   if (!label) {
-    // Use timestamp to ensure uniqueness for empty labels
-    return `unknown_role_${Date.now()}`;
+    // Use timestamp + random suffix to ensure uniqueness for empty labels
+    return `unknown_role_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   }
   
   const code = label
-    .toLowerCase()
     .trim()
+    .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
     .replace(/\s+/g, '_') // Replace spaces with underscores
     .replace(/-+/g, '_') // Replace hyphens with underscores
     .replace(/_+/g, '_') // Replace multiple underscores with single
     .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
   
-  // If result is empty (only special chars), use fallback with timestamp
+  // If result is empty (only special chars), use fallback with timestamp + random
   if (!code) {
-    return `unknown_role_${Date.now()}`;
+    return `unknown_role_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   }
   
   return code;
