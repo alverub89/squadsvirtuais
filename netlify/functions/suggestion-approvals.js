@@ -692,7 +692,7 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
       const existingPhases = existingPhasesResult.rows;
       console.log(`[suggestion-approvals] Found ${existingPhases.length} existing phases`);
       
-      // Get the max order_index to continue sequence
+      // Get the highest order_index to continue sequence (first row due to DESC ordering)
       const maxOrderIndex = existingPhases.length > 0 ? existingPhases[0].order_index : 0;
       
       // Build a set of existing phase names (case-insensitive) for quick lookup
