@@ -278,7 +278,7 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
               ) : (
                 <div className="roles-list-full">
                   {availableRoles.map((role) => (
-                    <div key={role.id} className="role-item-full">
+                    <div key={role.id} className="role-item-full role-item-add">
                       <div className="role-item-header">
                         <div className="role-icon">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -294,14 +294,14 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
                             {role.source === 'global' ? 'Global' : 'Workspace'}
                           </span>
                         </div>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleAddRole(role)}
-                          disabled={adding === role.id}
-                        >
-                          {adding === role.id ? 'Adicionando...' : 'Adicionar'}
-                        </button>
                       </div>
+                      <button
+                        className="btn btn-primary btn-sm btn-add-role"
+                        onClick={() => handleAddRole(role)}
+                        disabled={adding === role.id}
+                      >
+                        {adding === role.id ? 'Adicionando...' : 'Adicionar'}
+                      </button>
                       {role.description && (
                         <p className="role-description">{role.description}</p>
                       )}
