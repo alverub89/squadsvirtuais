@@ -235,26 +235,49 @@ exports.handler = async (event) => {
     // Build timeline based on data signals
     const timeline = await buildTimeline(squadId);
 
-    // Get members preview (first 3 active members)
-    const membersResult = await query(
-      `
-      SELECT 
-        sm.role_code,
-        sm.role_label,
-        sm.active,
-        u.name,
-        u.email
-      FROM sv.squad_members sm
-      JOIN sv.users u ON sm.user_id = u.id
-      WHERE sm.squad_id = $1 AND sm.active = true
-      ORDER BY sm.created_at
-      LIMIT 3
-      `,
-      [squadId]
-    );
+    // Get members preview (first 3 roles and personas)
+    // Fetch roles and personas to display as "members"
+    const [rolesPreview, personasPreview] = await Promise.all([
+      // Get first 2 active roles
+      query(
+        `
+        SELECT 
+          COALESCE(sr.name, r.label, wr.label) as name,
+          'Papel' as type,
+          sr.created_at
+        FROM sv.squad_roles sr
+        LEFT JOIN sv.roles r ON sr.role_id = r.id
+        LEFT JOIN sv.workspace_roles wr ON sr.workspace_role_id = wr.id
+        WHERE sr.squad_id = $1 AND sr.active = true
+        ORDER BY sr.created_at
+        LIMIT 2
+        `,
+        [squadId]
+      ),
+      // Get first 2 personas
+      query(
+        `
+        SELECT 
+          p.name,
+          'Persona' as type,
+          sp.created_at
+        FROM sv.squad_personas sp
+        JOIN sv.personas p ON sp.persona_id = p.id
+        WHERE sp.squad_id = $1
+        ORDER BY sp.created_at
+        LIMIT 2
+        `,
+        [squadId]
+      ),
+    ]);
 
-    const membersPreview = membersResult.rows.map((m) => {
-      // Generate initials from name (first 2 chars) or role_code as fallback
+    // Combine roles and personas, sort by created_at, and take first 3
+    const allMembers = [...rolesPreview.rows, ...personasPreview.rows]
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      .slice(0, 3);
+
+    const membersPreview = allMembers.map((m) => {
+      // Generate initials from name (first 2 chars)
       let initials = "??";
       if (m.name) {
         const nameParts = m.name.trim().split(/\s+/);
@@ -265,18 +288,15 @@ exports.handler = async (event) => {
           // Use first 2 letters of single name
           initials = m.name.substring(0, 2).toUpperCase();
         }
-      } else if (m.role_code) {
-        initials = m.role_code;
       }
       
       return {
         initials,
-        name: m.name || m.email,
-        role: m.role_label || "Membro",
-        active: m.active,
-        // TODO: Implement real online status detection based on last activity
-        // For now showing all as online to match reference design
-        online: true,
+        name: m.name,
+        role: m.type, // "Papel" or "Persona"
+        active: true,
+        // Roles and personas don't have online status
+        online: false,
       };
     });
 
