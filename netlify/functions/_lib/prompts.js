@@ -115,7 +115,7 @@ function renderPrompt(template, variables) {
 async function logPromptExecution({
   promptVersionId,
   proposalId = null,
-  workspaceId,
+  workspaceId, // Kept for backward compatibility but not used
   inputTokens,
   outputTokens,
   totalTokens,
@@ -125,13 +125,12 @@ async function logPromptExecution({
   userId,
 }) {
   try {
-    // Note: proposal_id column may not exist in all database versions
-    // Logging without it to ensure compatibility
+    // Note: workspace_id column does not exist in production database
+    // Removed from INSERT to ensure compatibility
     await query(
       `
       INSERT INTO sv.ai_prompt_executions (
         prompt_version_id,
-        workspace_id,
         input_tokens,
         output_tokens,
         total_tokens,
@@ -140,11 +139,10 @@ async function logPromptExecution({
         error_message,
         executed_by_user_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
       [
         promptVersionId,
-        workspaceId,
         inputTokens,
         outputTokens,
         totalTokens,
@@ -158,6 +156,7 @@ async function logPromptExecution({
     console.log("[prompts] Execution logged successfully");
   } catch (error) {
     console.error("[prompts] Error logging execution:", error.message);
+    console.error("[prompts] Error code:", error.code);
     // Don't throw - logging failure shouldn't break the main flow
   }
 }
