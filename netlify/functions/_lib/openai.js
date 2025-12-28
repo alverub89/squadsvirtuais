@@ -68,6 +68,21 @@ async function callOpenAI({
       },
       executionTimeMs,
       model: completion.model,
+      // Add raw response data for debugging/logging
+      rawResponse: {
+        id: completion.id,
+        created: completion.created,
+        choices: completion.choices.map(choice => ({
+          index: choice.index,
+          finish_reason: choice.finish_reason,
+          message: {
+            role: choice.message.role,
+            content: choice.message.content?.substring(0, 2000) // Limit content preview
+          }
+        })),
+        model: completion.model,
+        usage: completion.usage
+      }
     };
 
     return response;

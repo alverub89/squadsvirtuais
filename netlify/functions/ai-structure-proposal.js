@@ -153,9 +153,31 @@ async function generateProposal(event, userId) {
   // Render prompt
   const userPrompt = renderPrompt(promptVersion.prompt_text, promptVariables);
 
+  // Helper function to build input snapshot for logging
+  const buildInputSnapshot = () => ({
+    prompt_version_id: promptVersion.id,
+    prompt_name: promptVersion.prompt_name,
+    workspace_id: workspaceId,
+    squad_id: squad_id,
+    squad_name: squad.name,
+    problem_statement_summary: {
+      title: problemStatement?.title || "N/A",
+      has_narrative: !!problemStatement?.narrative,
+      has_success_metrics: !!problemStatement?.success_metrics
+    },
+    context_counts: {
+      existing_issues: issuesResult.rows.length,
+      existing_roles: rolesResult.rows.length,
+      existing_personas: personasResult.rows.length
+    },
+    source_context: sourceContext,
+    captured_at: new Date().toISOString()
+  });
+
   // Call OpenAI
   let aiResponse;
   let executionError = null;
+  let outputSnapshot = null;
 
   try {
     aiResponse = await callOpenAI({
@@ -166,12 +188,27 @@ async function generateProposal(event, userId) {
       jsonMode: true,
     });
 
+    // Build output snapshot immediately after OpenAI response
+    outputSnapshot = {
+      ok: true,
+      model: aiResponse.model,
+      execution_time_ms: aiResponse.executionTimeMs,
+      usage: aiResponse.usage,
+      openai_response_compact: aiResponse.rawResponse,
+      text_preview: aiResponse.content ? aiResponse.content.substring(0, 2000) : null,
+      finish_reason: aiResponse.finishReason,
+    };
+
     // Parse the JSON response
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(aiResponse.content);
+      outputSnapshot.parsed_json = parsedResponse;
     } catch (parseError) {
       console.error("[ai-structure-proposal] Failed to parse AI response:", parseError.message);
+      outputSnapshot.ok = false;
+      outputSnapshot.validation_error = "Failed to parse JSON response";
+      outputSnapshot.parse_error = parseError.message;
       throw new Error("A IA retornou uma resposta inválida. Por favor, tente novamente.");
     }
 
@@ -184,6 +221,8 @@ async function generateProposal(event, userId) {
     }
 
     if (!parsedResponse.proposal) {
+      outputSnapshot.ok = false;
+      outputSnapshot.validation_error = "AI não retornou uma proposta válida";
       throw new Error("AI não retornou uma proposta válida");
     }
 
@@ -225,6 +264,10 @@ async function generateProposal(event, userId) {
       promptVersionId: promptVersion.id,
       proposalId,
       workspaceId,
+      relatedEntityType: 'squad',
+      relatedEntityId: squad_id,
+      inputSnapshot: buildInputSnapshot(),
+      outputSnapshot: outputSnapshot,
       inputTokens: aiResponse.usage.inputTokens,
       outputTokens: aiResponse.usage.outputTokens,
       totalTokens: aiResponse.usage.totalTokens,
@@ -252,12 +295,28 @@ async function generateProposal(event, userId) {
 
     console.error("[ai-structure-proposal] Error generating proposal:", error.message);
 
+    // Build error output snapshot
+    if (!outputSnapshot) {
+      outputSnapshot = {
+        ok: false,
+        model: aiResponse?.model || promptVersion.model_name,
+        execution_time_ms: aiResponse?.executionTimeMs || 0,
+        usage: aiResponse?.usage || null,
+        validation_error: executionError,
+        raw_error: error.stack || error.message
+      };
+    }
+
     // Log failed execution
     if (promptVersion) {
       await logPromptExecution({
         promptVersionId: promptVersion.id,
         proposalId: null,
         workspaceId,
+        relatedEntityType: 'squad',
+        relatedEntityId: squad_id,
+        inputSnapshot: buildInputSnapshot(),
+        outputSnapshot: outputSnapshot,
         inputTokens: aiResponse?.usage?.inputTokens || 0,
         outputTokens: aiResponse?.usage?.outputTokens || 0,
         totalTokens: aiResponse?.usage?.totalTokens || 0,
