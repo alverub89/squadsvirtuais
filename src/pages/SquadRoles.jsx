@@ -169,19 +169,17 @@ export default function SquadRoles() {
   return (
     <Layout>
       <div className="squad-roles-container">
+        <button 
+          onClick={() => navigate(`/workspaces/${workspaceId}/squads/${squadId}`)}
+          className="btn-back"
+        >
+          ← Voltar
+        </button>
         <div className="squad-roles-header">
-          <div>
-            <button 
-              onClick={() => navigate(`/workspaces/${workspaceId}/squads/${squadId}`)}
-              className="btn-back"
-            >
-              ← Voltar
-            </button>
-            <h1>Roles da Squad</h1>
-            <p>Configure quais especialidades estão ativas nesta squad</p>
-          </div>
+          <h1>Roles da Squad</h1>
+          <p className="squad-roles-subtitle">Configure quais especialidades estão ativas nesta squad</p>
           <button 
-            className="btn btn-secondary"
+            className="btn btn-primary btn-large"
             onClick={() => navigate(`/workspaces/${workspaceId}/roles`)}
           >
             Gerenciar Roles

@@ -198,17 +198,15 @@ export default function SquadValidationMatrix() {
   return (
     <Layout>
       <div className="validation-matrix-container">
+        <button 
+          onClick={() => navigate(`/workspaces/${workspaceId}/squads/${squadId}`)}
+          className="btn-back"
+        >
+          ← Voltar
+        </button>
         <div className="validation-matrix-header">
-          <div>
-            <button 
-              onClick={() => navigate(`/workspaces/${workspaceId}/squads/${squadId}`)}
-              className="btn-back"
-            >
-              ← Voltar
-            </button>
-            <h1>Matriz de Validação</h1>
-            <p>Configure quais roles validam quais personas em cada checkpoint</p>
-          </div>
+          <h1>Matriz de Validação</h1>
+          <p className="validation-matrix-subtitle">Configure quais roles validam quais personas em cada checkpoint</p>
         </div>
 
         {/* Current Version */}
