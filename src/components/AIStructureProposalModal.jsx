@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import ApprovalQueue from './ApprovalQueue'
 import './AIStructureProposalModal.css'
 
 export default function AIStructureProposalModal({ squadId, onClose, onConfirm }) {
@@ -9,6 +10,7 @@ export default function AIStructureProposalModal({ squadId, onClose, onConfirm }
   const [proposal, setProposal] = useState(null)
   const [editedProposal, setEditedProposal] = useState(null)
   const [confirming, setConfirming] = useState(false)
+  const [showApprovalQueue, setShowApprovalQueue] = useState(false)
 
   useEffect(() => {
     generateProposal()
@@ -46,6 +48,16 @@ export default function AIStructureProposalModal({ squadId, onClose, onConfirm }
   }
 
   const handleConfirm = async () => {
+    // Instead of auto-confirming, open the approval queue
+    setShowApprovalQueue(true)
+  }
+
+  const handleApprovalComplete = () => {
+    // Mark proposal as confirmed after all approvals
+    markProposalAsConfirmed()
+  }
+
+  const markProposalAsConfirmed = async () => {
     try {
       setConfirming(true)
 
@@ -215,6 +227,21 @@ export default function AIStructureProposalModal({ squadId, onClose, onConfirm }
     )
   }
 
+  // Show approval queue if triggered
+  if (showApprovalQueue && proposal) {
+    return (
+      <ApprovalQueue
+        squadId={squadId}
+        proposalId={proposal.id}
+        onComplete={handleApprovalComplete}
+        onClose={() => {
+          setShowApprovalQueue(false)
+          onClose()
+        }}
+      />
+    )
+  }
+
   return (
     <div className="ai-proposal-overlay" onClick={(e) => {
       if (e.target.className === 'ai-proposal-overlay') onClose()
@@ -230,7 +257,7 @@ export default function AIStructureProposalModal({ squadId, onClose, onConfirm }
               Proposta de Estrutura
             </h2>
             <p className="ai-proposal-subtitle">
-              A IA analisou o problema de negócio e gerou uma proposta de trabalho editável
+              A IA analisou o problema de negócio e gerou sugestões. Você poderá revisar e aprovar cada item individualmente.
             </p>
           </div>
           <button className="ai-proposal-close" onClick={onClose} aria-label="Fechar">
@@ -337,7 +364,7 @@ export default function AIStructureProposalModal({ squadId, onClose, onConfirm }
               onClick={handleConfirm}
               disabled={confirming}
             >
-              {confirming ? 'Confirmando...' : 'Confirmar Proposta'}
+              Iniciar Aprovações →
             </button>
           </div>
         )}
