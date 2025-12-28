@@ -13,6 +13,8 @@ export default function SquadRoles() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activating, setActivating] = useState(null)
+  const [editingRole, setEditingRole] = useState(null)
+  const [editFormData, setEditFormData] = useState({ name: '', description: '' })
 
   const loadData = useCallback(async () => {
     try {
@@ -130,6 +132,51 @@ export default function SquadRoles() {
     }
   }
 
+  const handleStartEdit = (squadRole) => {
+    setEditingRole(squadRole.squad_role_id)
+    setEditFormData({
+      name: squadRole.custom_name || '',
+      description: squadRole.custom_description || ''
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingRole(null)
+    setEditFormData({ name: '', description: '' })
+  }
+
+  const handleSaveEdit = async (squadRoleId) => {
+    try {
+      setActivating(squadRoleId)
+      
+      const res = await fetch(`/.netlify/functions/squad-roles/${squadRoleId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: editFormData.name.trim() || null,
+          description: editFormData.description.trim() || null
+        })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erro ao atualizar role')
+      }
+
+      setEditingRole(null)
+      setEditFormData({ name: '', description: '' })
+      await loadData()
+    } catch (err) {
+      console.error('Error updating role:', err)
+      alert(err.message || 'Erro ao atualizar role')
+    } finally {
+      setActivating(null)
+    }
+  }
+
   if (loading) {
     return (
       <Layout>
@@ -198,28 +245,107 @@ export default function SquadRoles() {
             <div className="roles-grid">
               {squadRoles.filter(sr => sr.active).map(squadRole => (
                 <div key={squadRole.squad_role_id} className="role-card active">
-                  <div className="role-header">
-                    <h3>{squadRole.label}</h3>
-                    <span className={`role-badge ${squadRole.source}`}>
-                      {squadRole.source === 'global' ? 'Global' : 'Workspace'}
-                    </span>
-                  </div>
-                  {squadRole.description && (
-                    <p className="role-description">{squadRole.description}</p>
-                  )}
-                  {squadRole.responsibilities && (
-                    <div className="role-responsibilities">
-                      <strong>Responsabilidades:</strong>
-                      <p>{squadRole.responsibilities}</p>
+                  {editingRole === squadRole.squad_role_id ? (
+                    // Edit mode
+                    <div className="role-edit-form">
+                      <div className="form-group">
+                        <label htmlFor={`name-${squadRole.squad_role_id}`}>
+                          Nome Customizado
+                          {!editFormData.name.trim() && (
+                            <span className="label-hint"> (vazio = usar padrão: {squadRole.label})</span>
+                          )}
+                        </label>
+                        <input
+                          type="text"
+                          id={`name-${squadRole.squad_role_id}`}
+                          value={editFormData.name}
+                          onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                          placeholder={squadRole.label}
+                          className="form-input"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor={`description-${squadRole.squad_role_id}`}>
+                          Descrição Customizada
+                          {!editFormData.description.trim() && (
+                            <span className="label-hint"> (vazio = usar padrão)</span>
+                          )}
+                        </label>
+                        <textarea
+                          id={`description-${squadRole.squad_role_id}`}
+                          value={editFormData.description}
+                          onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                          placeholder="Descrição personalizada para esta role na squad"
+                          rows="4"
+                          className="form-textarea"
+                        />
+                      </div>
+                      <div className="form-actions">
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleSaveEdit(squadRole.squad_role_id)}
+                          disabled={activating === squadRole.squad_role_id}
+                        >
+                          {activating === squadRole.squad_role_id ? 'Salvando...' : 'Salvar'}
+                        </button>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={handleCancelEdit}
+                          disabled={activating === squadRole.squad_role_id}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
+                  ) : (
+                    // Display mode
+                    <>
+                      <div className="role-header">
+                        <h3>
+                          {squadRole.name}
+                          {squadRole.custom_name && (
+                            <span className="custom-indicator" title="Nome customizado para esta squad">
+                              ✏️
+                            </span>
+                          )}
+                        </h3>
+                        <span className={`role-badge ${squadRole.source}`}>
+                          {squadRole.source === 'global' ? 'Global' : 'Workspace'}
+                        </span>
+                      </div>
+                      {squadRole.description && (
+                        <p className="role-description">
+                          {squadRole.description}
+                          {squadRole.custom_description && (
+                            <span className="custom-indicator" title="Descrição customizada para esta squad">
+                              {' ✏️'}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      {squadRole.responsibilities && (
+                        <div className="role-responsibilities">
+                          <strong>Responsabilidades:</strong>
+                          <p>{squadRole.responsibilities}</p>
+                        </div>
+                      )}
+                      <div className="role-actions">
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleStartEdit(squadRole)}
+                        >
+                          Customizar
+                        </button>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleToggleRole(squadRole)}
+                          disabled={activating === squadRole.squad_role_id}
+                        >
+                          {activating === squadRole.squad_role_id ? 'Desativando...' : 'Desativar'}
+                        </button>
+                      </div>
+                    </>
                   )}
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => handleToggleRole(squadRole)}
-                    disabled={activating === squadRole.squad_role_id}
-                  >
-                    {activating === squadRole.squad_role_id ? 'Desativando...' : 'Desativar'}
-                  </button>
                 </div>
               ))}
             </div>
