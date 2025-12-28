@@ -53,14 +53,18 @@ exports.handler = async (event) => {
     // Build query based on filter
     let queryText = `
       SELECT 
-        id,
-        title,
-        decision,
-        created_by_role,
-        created_at,
-        updated_at
-      FROM sv.decisions
-      WHERE squad_id = $1
+        d.id,
+        d.title,
+        d.decision,
+        d.created_by_role,
+        d.created_by_user_id,
+        d.created_at,
+        d.updated_at,
+        u.name as created_by_user_name,
+        u.email as created_by_user_email
+      FROM sv.decisions d
+      LEFT JOIN sv.users u ON d.created_by_user_id = u.id
+      WHERE d.squad_id = $1
     `;
     
     const params = [squadId];
@@ -90,6 +94,9 @@ exports.handler = async (event) => {
         title: d.title,
         decision: decisionContent,
         created_by_role: d.created_by_role,
+        created_by_user_id: d.created_by_user_id,
+        created_by_user_name: d.created_by_user_name,
+        created_by_user_email: d.created_by_user_email,
         created_at: d.created_at,
         updated_at: d.updated_at
       };
