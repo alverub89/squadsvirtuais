@@ -1,6 +1,9 @@
 // netlify/functions/_lib/prompts.js
 const { query } = require("./db");
 
+// Cache for table columns (per cold start)
+let cachedColumns = null;
+
 /**
  * Helper function to check if a value should be considered "present" in template conditionals
  * @param {*} value - Value to check
@@ -109,13 +112,47 @@ function renderPrompt(template, variables) {
 }
 
 /**
- * Log prompt execution
+ * Detect available columns in sv.ai_prompt_executions table
+ * Cached per cold start to avoid repeated queries
+ * @returns {Promise<Set<string>>} Set of available column names
+ */
+async function detectAvailableColumns() {
+  if (cachedColumns !== null) {
+    return cachedColumns;
+  }
+
+  try {
+    console.log("[prompts] Detecting available columns in sv.ai_prompt_executions");
+    
+    const result = await query(
+      `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'sv' AND table_name = 'ai_prompt_executions'
+      `,
+      []
+    );
+
+    cachedColumns = new Set(result.rows.map(row => row.column_name));
+    console.log("[prompts] Available columns:", Array.from(cachedColumns).join(", "));
+    
+    return cachedColumns;
+  } catch (error) {
+    console.error("[prompts] Error detecting columns:", error.message);
+    // Return empty set as fallback
+    cachedColumns = new Set();
+    return cachedColumns;
+  }
+}
+
+/**
+ * Log prompt execution with schema-aware dynamic INSERT
  * @param {Object} params - Execution parameters
  */
 async function logPromptExecution({
   promptVersionId,
   proposalId = null,
-  workspaceId, // Kept for backward compatibility but not used
+  workspaceId, // Kept for backward compatibility
   inputTokens,
   outputTokens,
   totalTokens,
@@ -125,35 +162,55 @@ async function logPromptExecution({
   userId,
 }) {
   try {
-    // Note: workspace_id column does not exist in production database
-    // Removed from INSERT to ensure compatibility
-    await query(
-      `
-      INSERT INTO sv.ai_prompt_executions (
-        prompt_version_id,
-        input_tokens,
-        output_tokens,
-        total_tokens,
-        execution_time_ms,
-        success,
-        error_message,
-        executed_by_user_id
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      `,
-      [
-        promptVersionId,
-        inputTokens,
-        outputTokens,
-        totalTokens,
-        executionTimeMs,
-        success,
-        errorMessage,
-        userId,
-      ]
-    );
+    // Detect available columns
+    const availableColumns = await detectAvailableColumns();
 
-    console.log("[prompts] Execution logged successfully");
+    if (availableColumns.size === 0) {
+      console.warn("[prompts] ai_prompt_executions table not found or no columns detected, skipping log");
+      return;
+    }
+
+    // Map of candidate fields to their values
+    const candidateFields = {
+      prompt_version_id: promptVersionId,
+      proposal_id: proposalId,
+      workspace_id: workspaceId,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      total_tokens: totalTokens,
+      execution_time_ms: executionTimeMs,
+      success: success,
+      error_message: errorMessage,
+      executed_by_user_id: userId,
+    };
+
+    // Filter to only include fields that exist in the table
+    const fieldsToInsert = {};
+    Object.keys(candidateFields).forEach(field => {
+      if (availableColumns.has(field)) {
+        fieldsToInsert[field] = candidateFields[field];
+      }
+    });
+
+    // Check if we have at least prompt_version_id (minimum required field)
+    if (!fieldsToInsert.prompt_version_id) {
+      console.warn("[prompts] ai_prompt_executions schema incompatible (no prompt_version_id column), skipping log");
+      return;
+    }
+
+    // Build dynamic INSERT
+    const columnNames = Object.keys(fieldsToInsert);
+    const values = Object.values(fieldsToInsert);
+    const placeholders = columnNames.map((_, index) => `$${index + 1}`).join(", ");
+
+    const insertQuery = `
+      INSERT INTO sv.ai_prompt_executions (${columnNames.join(", ")})
+      VALUES (${placeholders})
+    `;
+
+    await query(insertQuery, values);
+
+    console.log("[prompts] Execution logged successfully with columns:", columnNames.join(", "));
   } catch (error) {
     console.error("[prompts] Error logging execution:", error.message);
     console.error("[prompts] Error code:", error.code);
