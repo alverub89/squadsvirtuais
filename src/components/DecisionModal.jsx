@@ -1,5 +1,40 @@
 import './DecisionModal.css'
 
+// Primary fields to show first (in order) - defined outside component to avoid recreation
+const PRIMARY_FIELDS = ['title', 'context', 'narrative', 'options', 'recommendation', 'decision', 'tradeoffs', 'impact']
+
+// Field name translation mapping - defined outside component to avoid recreation
+const FIELD_LABELS = {
+  title: 'Título',
+  context: 'Contexto',
+  options: 'Opções Consideradas',
+  recommendation: 'Recomendação',
+  decision: 'Decisão',
+  tradeoffs: 'Trade-offs',
+  impact: 'Impacto',
+  impacts: 'Impactos',
+  narrative: 'Narrativa',
+  success_metrics: 'Métricas de Sucesso',
+  constraints: 'Restrições',
+  why_now: 'Por que Agora',
+  what_is_at_risk: 'O que Está em Risco',
+  decision_horizon: 'Horizonte de Decisão',
+  decision_rules: 'Regras de Decisão',
+  non_negotiables: 'Não Negociáveis',
+  question: 'Questão',
+  why_it_matters: 'Por que Importa',
+  how_to_reduce: 'Como Reduzir',
+  approach: 'Abordagem',
+  responsibilities: 'Responsabilidades',
+  signals_to_stop: 'Sinais para Parar',
+  signals_of_confidence: 'Sinais de Confiança',
+  before: 'Antes',
+  after: 'Depois',
+  changed_at: 'Alterado em',
+  proposal: 'Proposta',
+  confirmed_at: 'Confirmado em'
+}
+
 export default function DecisionModal({ decision, onClose }) {
   if (!decision) return null
 
@@ -24,42 +59,10 @@ export default function DecisionModal({ decision, onClose }) {
     }
   }
 
-  // Field name translation mapping
-  const fieldLabels = {
-    title: 'Título',
-    context: 'Contexto',
-    options: 'Opções Consideradas',
-    recommendation: 'Recomendação',
-    decision: 'Decisão',
-    tradeoffs: 'Trade-offs',
-    impact: 'Impactos',
-    impacts: 'Impactos',
-    narrative: 'Narrativa',
-    success_metrics: 'Métricas de Sucesso',
-    constraints: 'Restrições',
-    why_now: 'Por que Agora',
-    what_is_at_risk: 'O que Está em Risco',
-    decision_horizon: 'Horizonte de Decisão',
-    decision_rules: 'Regras de Decisão',
-    non_negotiables: 'Não Negociáveis',
-    question: 'Questão',
-    why_it_matters: 'Por que Importa',
-    how_to_reduce: 'Como Reduzir',
-    approach: 'Abordagem',
-    responsibilities: 'Responsabilidades',
-    signals_to_stop: 'Sinais para Parar',
-    signals_of_confidence: 'Sinais de Confiança',
-    before: 'Antes',
-    after: 'Depois',
-    changed_at: 'Alterado em',
-    proposal: 'Proposta',
-    confirmed_at: 'Confirmado em'
-  }
-
   // Get translated label or capitalize the key
   const getFieldLabel = (key) => {
-    if (fieldLabels[key]) {
-      return fieldLabels[key]
+    if (FIELD_LABELS[key]) {
+      return FIELD_LABELS[key]
     }
     // Capitalize and replace underscores with spaces
     return key.split('_').map(word => 
@@ -106,9 +109,6 @@ export default function DecisionModal({ decision, onClose }) {
     return String(value)
   }
 
-  // Primary fields to show first (in order)
-  const primaryFields = ['title', 'context', 'narrative', 'options', 'recommendation', 'decision', 'tradeoffs', 'impact']
-
   // Helper to render decision content in organized sections
   const renderDecisionContent = () => {
     if (!decision.decision) {
@@ -124,8 +124,8 @@ export default function DecisionModal({ decision, onClose }) {
     const allKeys = Object.keys(decisionData)
     
     // Separate primary fields from other fields
-    const primaryToShow = primaryFields.filter(key => allKeys.includes(key))
-    const otherFields = allKeys.filter(key => !primaryFields.includes(key))
+    const primaryToShow = PRIMARY_FIELDS.filter(key => allKeys.includes(key))
+    const otherFields = allKeys.filter(key => !PRIMARY_FIELDS.includes(key))
 
     return (
       <div className="decision-structured">
