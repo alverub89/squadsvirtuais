@@ -395,6 +395,33 @@ async function rejectSuggestion(event, suggestionId, userId) {
 }
 
 /**
+ * Generate a slug/code from a label string
+ * Example: "Tech Lead" -> "tech_lead"
+ */
+function generateCodeFromLabel(label) {
+  if (!label) {
+    // Use timestamp + random suffix to ensure uniqueness for empty labels
+    return `unknown_role_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  }
+  
+  const code = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s_-]/g, '') // Remove special characters except spaces, underscores and hyphens
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/-+/g, '_') // Replace hyphens with underscores
+    .replace(/_+/g, '_') // Replace multiple underscores with single
+    .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+  
+  // If result is empty (only special chars), use fallback with timestamp + random
+  if (!code) {
+    return `unknown_role_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  }
+  
+  return code;
+}
+
+/**
  * Persist approved suggestion to appropriate database table
  */
 async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
@@ -523,17 +550,22 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
         );
       } else {
         // Create as workspace role first
+        const roleLabel = data.role || data.label;
+        const roleCode = generateCodeFromLabel(roleLabel);
+        
         const newRoleResult = await query(
           `INSERT INTO sv.workspace_roles (
             workspace_id,
+            code,
             label,
             description,
             responsibilities
-          ) VALUES ($1, $2, $3, $4)
+          ) VALUES ($1, $2, $3, $4, $5)
           RETURNING id`,
           [
             workspaceId,
-            data.role || data.label,
+            roleCode,
+            roleLabel,
             data.description,
             data.accountability || data.responsibility
           ]
@@ -560,9 +592,8 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
           `INSERT INTO sv.phases (
             squad_id,
             name,
-            order_index,
-            status
-          ) VALUES ($1, $2, $3, 'rascunho')`,
+            order_index
+          ) VALUES ($1, $2, $3)`,
           [squadId, phase.name, i + 1]
         );
       }
