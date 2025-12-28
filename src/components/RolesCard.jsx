@@ -12,6 +12,8 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [availableRoles, setAvailableRoles] = useState([])
   const [adding, setAdding] = useState(null)
+  const [removing, setRemoving] = useState(null)
+  const [confirmRemove, setConfirmRemove] = useState(null)
 
   const loadRoles = async () => {
     try {
@@ -122,6 +124,41 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
     setShowAddModal(true)
   }
 
+  const handleRemoveRole = async (role) => {
+    setConfirmRemove(null)
+    
+    try {
+      setRemoving(role.squad_role_id)
+      
+      const res = await fetch(
+        `/.netlify/functions/squad-roles?squad_role_id=${role.squad_role_id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erro ao remover vínculo')
+      }
+
+      await loadRoles()
+      if (onUpdate) onUpdate()
+    } catch (err) {
+      console.error('Error removing role:', err)
+      alert(err.message || 'Erro ao remover vínculo do papel')
+    } finally {
+      setRemoving(null)
+    }
+  }
+
+  const confirmRemoveRole = (role) => {
+    setConfirmRemove(role)
+  }
+
   if (loading) {
     return (
       <div className="roles-card">
@@ -183,6 +220,17 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
                       </span>
                     </div>
                   </div>
+                  <button
+                    className="btn-remove-role"
+                    onClick={() => confirmRemoveRole(role)}
+                    disabled={removing === role.squad_role_id}
+                    title="Remover papel da squad"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
                 </div>
               ))}
             </div>
@@ -228,6 +276,17 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
                             {role.source === 'global' ? 'Global' : 'Workspace'}
                           </span>
                         </div>
+                        <button
+                          className="btn-remove-role"
+                          onClick={() => confirmRemoveRole(role)}
+                          disabled={removing === role.squad_role_id}
+                          title="Remover papel da squad"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
                       </div>
                       {role.description && (
                         <p className="role-description">{role.description}</p>
@@ -319,6 +378,42 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
                 Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Confirm Remove Role */}
+      {confirmRemove && (
+        <div className="modal-overlay" onClick={() => setConfirmRemove(null)}>
+          <div className="modal-content modal-confirm" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Remover Papel da Squad</h2>
+              <button className="btn-close" onClick={() => setConfirmRemove(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p>
+                Tem certeza que deseja remover o papel <strong>{confirmRemove.label}</strong> desta squad?
+              </p>
+              <p className="confirm-note">
+                ⚠️ <strong>Nota:</strong> Apenas o vínculo com esta squad será removido. 
+                O papel continuará disponível no sistema e em outras squads.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setConfirmRemove(null)}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn btn-danger" 
+                onClick={() => handleRemoveRole(confirmRemove)}
+                disabled={removing === confirmRemove.squad_role_id}
+              >
+                {removing === confirmRemove.squad_role_id ? 'Removendo...' : 'Remover Vínculo'}
               </button>
             </div>
           </div>

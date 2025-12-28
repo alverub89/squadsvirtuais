@@ -266,6 +266,67 @@ exports.handler = async (event) => {
       });
     }
 
+    // Handle DELETE (remove squad role link)
+    if (event.httpMethod === "DELETE") {
+      console.log("[squad-roles] Removendo vínculo de squad role");
+
+      const squadRoleId = event.queryStringParameters?.squad_role_id;
+
+      if (!squadRoleId) {
+        return json(400, { error: "squad_role_id é obrigatório" });
+      }
+
+      // Get squad_id to verify access
+      const squadRoleCheck = await query(
+        `
+        SELECT sr.squad_id
+        FROM sv.squad_roles sr
+        WHERE sr.id = $1
+        `,
+        [squadRoleId]
+      );
+
+      if (squadRoleCheck.rows.length === 0) {
+        return json(404, { error: "Squad role não encontrado" });
+      }
+
+      const squadId = squadRoleCheck.rows[0].squad_id;
+
+      // Verify user has access to squad
+      const accessCheck = await query(
+        `
+        SELECT 1 
+        FROM sv.squads s
+        JOIN sv.workspace_members wm ON wm.workspace_id = s.workspace_id
+        WHERE s.id = $1 AND wm.user_id = $2
+        `,
+        [squadId, userId]
+      );
+
+      if (accessCheck.rows.length === 0) {
+        console.log("[squad-roles] Usuário não tem acesso à squad");
+        return json(403, { error: "Acesso negado à squad" });
+      }
+
+      // Delete the squad role link (soft delete by setting active = false would be an alternative)
+      const result = await query(
+        `
+        DELETE FROM sv.squad_roles
+        WHERE id = $1
+        RETURNING id
+        `,
+        [squadRoleId]
+      );
+
+      console.log("[squad-roles] Vínculo de squad role removido:", squadRoleId);
+
+      return json(200, {
+        ok: true,
+        message: "Vínculo removido com sucesso",
+        squad_role_id: result.rows[0].id
+      });
+    }
+
     // Method not allowed
     return json(405, { error: "Método não permitido" });
 
