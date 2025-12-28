@@ -19,9 +19,12 @@ pool.on('error', (err) => {
 
 /**
  * Generate a unique tracking ID for each query
+ * Using timestamp + random for better uniqueness
  */
 function generateTrackingId() {
-  return Math.random().toString(36).substring(2, 8);
+  const timestamp = Date.now().toString(36).slice(-4);
+  const random = Math.random().toString(36).substring(2, 6);
+  return timestamp + random;
 }
 
 async function query(text, params) {
@@ -39,7 +42,7 @@ async function query(text, params) {
   } catch (error) {
     console.error(`[db:${trackingId}] ❌ ERRO AO EXECUTAR QUERY`);
     console.error(`[db:${trackingId}] SQL completo: ${text}`);
-    console.error(`[db:${trackingId}] Params: ${JSON.stringify(params)}`);
+    console.error(`[db:${trackingId}] Params: ${JSON.stringify(params)}`); // Note: may contain sensitive data
     console.error(`[db:${trackingId}] Mensagem: ${error.message}`);
     console.error(`[db:${trackingId}] Código: ${error.code}`);
     console.error(`[db:${trackingId}] Detalhes: ${error.detail || 'N/A'}`);
