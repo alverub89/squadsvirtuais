@@ -89,12 +89,6 @@ export default function SquadsList() {
           </div>
           <div className="header-actions">
             <button 
-              className="btn btn-secondary"
-              onClick={() => navigate(`/workspaces/${workspaceId}/roles`)}
-            >
-              Gerenciar Roles
-            </button>
-            <button 
               className="btn btn-primary"
               onClick={() => navigate(`/workspaces/${workspaceId}/squads/create`)}
             >
