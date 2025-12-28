@@ -5,6 +5,7 @@ const { json } = require("./_lib/response");
 
 // Constants
 const PROBLEM_STATEMENT_TITLE = 'Problem Statement';
+const DEFAULT_PERSONA_TYPE = 'cliente';
 
 /**
  * Parse AI proposal payload and create individual suggestion proposals
@@ -490,7 +491,7 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
           [
             workspaceId,
             data.name,
-            data.type || 'cliente',
+            data.type || DEFAULT_PERSONA_TYPE,
             data.description,
             data.goals,
             data.pain_points
@@ -598,7 +599,9 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
       }
 
       // Step 3: Always link role to squad (whether new or existing)
-      // Build the query to check/verify based on which ID we have
+      // Note: We use conditional queries here because PostgreSQL doesn't handle NULL values
+      // in comparisons the way we need. "role_id = $2" when $2 is NULL won't match NULL rows.
+      // The schema constraint ensures exactly one of role_id or workspace_role_id is NOT NULL.
       const roleCheckQuery = roleId 
         ? `SELECT id FROM sv.squad_roles WHERE squad_id = $1 AND role_id = $2`
         : `SELECT id FROM sv.squad_roles WHERE squad_id = $1 AND workspace_role_id = $2`;
@@ -611,6 +614,7 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
         console.log(`[suggestion-approvals] Squad role link already exists with id: ${existingSquadRoleCheck.rows[0].id}`);
       } else {
         console.log(`[suggestion-approvals] Linking role to squad...`);
+        // The INSERT always includes both IDs; schema constraint ensures only one is non-null
         const linkRoleResult = await query(
           `INSERT INTO sv.squad_roles (
             squad_id,
