@@ -9,14 +9,9 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
   const [loading, setLoading] = useState(true)
   const [showAllModal, setShowAllModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [selectedPersona, setSelectedPersona] = useState('')
   const [adding, setAdding] = useState(null)
   const [removing, setRemoving] = useState(null)
   const [confirmRemove, setConfirmRemove] = useState(null)
-  const [contextForm, setContextForm] = useState({
-    context_description: '',
-    focus: ''
-  })
 
   // Load squad personas
   const loadSquadPersonas = useCallback(async () => {
@@ -92,9 +87,7 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
           },
           body: JSON.stringify({
             squad_id: squadId,
-            persona_id: persona.id,
-            context_description: contextForm.context_description,
-            focus: contextForm.focus
+            persona_id: persona.id
           })
         }
       )
