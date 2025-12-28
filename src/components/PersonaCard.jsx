@@ -61,9 +61,11 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
       }
 
       const data = await res.json()
-      // Filter out personas already in this squad using Set for O(1) lookups
+      // Filter out personas already in this squad and inactive personas
       const squadPersonaIds = new Set(personas.map(p => p.persona_id))
-      const available = data.personas.filter(p => !squadPersonaIds.has(p.id) && p.active)
+      const available = data.personas.filter(p => 
+        !squadPersonaIds.has(p.id) && (p.active !== false)
+      )
       setAvailablePersonas(available)
     } catch (err) {
       console.error('Error loading available personas:', err)
@@ -105,11 +107,11 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
       await loadSquadPersonas()
       if (onUpdate) onUpdate()
       
-      // Refresh available personas
+      // Refresh available personas list
       await loadAvailablePersonas()
     } catch (err) {
       console.error('Error adding persona:', err)
-      alert(err.message)
+      alert(err.message || 'Erro ao adicionar persona')
     } finally {
       setAdding(null)
     }
@@ -141,7 +143,7 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
       if (onUpdate) onUpdate()
     } catch (err) {
       console.error('Error removing persona:', err)
-      alert(err.message)
+      alert(err.message || 'Erro ao remover persona')
     } finally {
       setRemoving(null)
     }
@@ -155,6 +157,15 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
   useEffect(() => {
     loadSquadPersonas()
   }, [loadSquadPersonas])
+
+  // Helper function to get persona source display
+  const getPersonaSource = (persona) => {
+    const source = persona.source || 'workspace'
+    return {
+      value: source,
+      label: source === 'global' ? 'Global' : 'Workspace'
+    }
+  }
 
   if (loading) {
     return (
@@ -210,8 +221,8 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
                   <div className="persona-info">
                     <div className="persona-name">{persona.name}</div>
                     <div className="persona-meta">
-                      <span className={`persona-source ${persona.source || 'workspace'}`}>
-                        {persona.source === 'global' ? 'Global' : 'Workspace'}
+                      <span className={`persona-source ${getPersonaSource(persona).value}`}>
+                        {getPersonaSource(persona).label}
                       </span>
                     </div>
                   </div>
@@ -265,8 +276,8 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
                         </div>
                         <div className="persona-info">
                           <div className="persona-name">{persona.name}</div>
-                          <span className={`persona-source ${persona.source || 'workspace'}`}>
-                            {persona.source === 'global' ? 'Global' : 'Workspace'}
+                          <span className={`persona-source ${getPersonaSource(persona).value}`}>
+                            {getPersonaSource(persona).label}
                           </span>
                         </div>
                         <button
@@ -351,8 +362,8 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
                         </div>
                         <div className="persona-info">
                           <div className="persona-name">{persona.name}</div>
-                          <span className={`persona-source ${persona.source || 'workspace'}`}>
-                            {persona.source === 'global' ? 'Global' : 'Workspace'}
+                          <span className={`persona-source ${getPersonaSource(persona).value}`}>
+                            {getPersonaSource(persona).label}
                           </span>
                         </div>
                       </div>
