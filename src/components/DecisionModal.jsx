@@ -90,12 +90,10 @@ export default function DecisionModal({ decision, onClose }) {
         return (
           <div className="nested-fields">
             {Object.entries(value).map(([nestedKey, nestedValue]) => (
-              <div key={nestedKey} className="nested-field">
+              <div key={`nested-${nestedKey}`} className="nested-field">
                 <strong className="nested-field-label">{getFieldLabel(nestedKey)}:</strong>
                 <div className="nested-field-value">
-                  {typeof nestedValue === 'object' 
-                    ? JSON.stringify(nestedValue, null, 2) 
-                    : String(nestedValue)}
+                  {renderFieldValue(nestedValue)}
                 </div>
               </div>
             ))}
@@ -109,7 +107,7 @@ export default function DecisionModal({ decision, onClose }) {
   }
 
   // Primary fields to show first (in order)
-  const primaryFields = ['title', 'context', 'narrative', 'options', 'recommendation', 'decision', 'tradeoffs', 'impact', 'impacts']
+  const primaryFields = ['title', 'context', 'narrative', 'options', 'recommendation', 'decision', 'tradeoffs', 'impact']
 
   // Helper to render decision content in organized sections
   const renderDecisionContent = () => {
