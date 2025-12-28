@@ -195,7 +195,7 @@ async function logPromptExecution({
     // Filter to only include fields that exist in the table
     const fieldsToInsert = {};
     Object.keys(candidateFields).forEach(field => {
-      if (availableColumns.has(field) && candidateFields[field] !== null) {
+      if (availableColumns.has(field) && candidateFields[field] != null) {
         fieldsToInsert[field] = candidateFields[field];
       }
     });

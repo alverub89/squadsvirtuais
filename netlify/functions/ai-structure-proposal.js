@@ -153,6 +153,27 @@ async function generateProposal(event, userId) {
   // Render prompt
   const userPrompt = renderPrompt(promptVersion.prompt_text, promptVariables);
 
+  // Helper function to build input snapshot for logging
+  const buildInputSnapshot = () => ({
+    prompt_version_id: promptVersion.id,
+    prompt_name: promptVersion.prompt_name,
+    workspace_id: workspaceId,
+    squad_id: squad_id,
+    squad_name: squad.name,
+    problem_statement_summary: {
+      title: problemStatement?.title || "N/A",
+      has_narrative: !!problemStatement?.narrative,
+      has_success_metrics: !!problemStatement?.success_metrics
+    },
+    context_counts: {
+      existing_issues: issuesResult.rows.length,
+      existing_roles: rolesResult.rows.length,
+      existing_personas: personasResult.rows.length
+    },
+    source_context: sourceContext,
+    captured_at: new Date().toISOString()
+  });
+
   // Call OpenAI
   let aiResponse;
   let executionError = null;
@@ -238,27 +259,6 @@ async function generateProposal(event, userId) {
 
     const proposalId = proposalResult.rows[0].id;
 
-    // Build comprehensive input snapshot for logging
-    const loggingInputSnapshot = {
-      prompt_version_id: promptVersion.id,
-      prompt_name: promptVersion.prompt_name,
-      workspace_id: workspaceId,
-      squad_id: squad_id,
-      squad_name: squad.name,
-      problem_statement_summary: {
-        title: problemStatement.title,
-        has_narrative: !!problemStatement.narrative,
-        has_success_metrics: !!problemStatement.success_metrics
-      },
-      context_counts: {
-        existing_issues: issuesResult.rows.length,
-        existing_roles: rolesResult.rows.length,
-        existing_personas: personasResult.rows.length
-      },
-      source_context: sourceContext,
-      captured_at: new Date().toISOString()
-    };
-
     // Log execution
     await logPromptExecution({
       promptVersionId: promptVersion.id,
@@ -266,7 +266,7 @@ async function generateProposal(event, userId) {
       workspaceId,
       relatedEntityType: 'squad',
       relatedEntityId: squad_id,
-      inputSnapshot: loggingInputSnapshot,
+      inputSnapshot: buildInputSnapshot(),
       outputSnapshot: outputSnapshot,
       inputTokens: aiResponse.usage.inputTokens,
       outputTokens: aiResponse.usage.outputTokens,
@@ -307,27 +307,6 @@ async function generateProposal(event, userId) {
       };
     }
 
-    // Build comprehensive input snapshot for logging (even for errors)
-    const loggingInputSnapshot = {
-      prompt_version_id: promptVersion.id,
-      prompt_name: promptVersion.prompt_name,
-      workspace_id: workspaceId,
-      squad_id: squad_id,
-      squad_name: squad.name,
-      problem_statement_summary: {
-        title: problemStatement?.title || "N/A",
-        has_narrative: !!problemStatement?.narrative,
-        has_success_metrics: !!problemStatement?.success_metrics
-      },
-      context_counts: {
-        existing_issues: issuesResult.rows.length,
-        existing_roles: rolesResult.rows.length,
-        existing_personas: personasResult.rows.length
-      },
-      source_context: sourceContext,
-      captured_at: new Date().toISOString()
-    };
-
     // Log failed execution
     if (promptVersion) {
       await logPromptExecution({
@@ -336,7 +315,7 @@ async function generateProposal(event, userId) {
         workspaceId,
         relatedEntityType: 'squad',
         relatedEntityId: squad_id,
-        inputSnapshot: loggingInputSnapshot,
+        inputSnapshot: buildInputSnapshot(),
         outputSnapshot: outputSnapshot,
         inputTokens: aiResponse?.usage?.inputTokens || 0,
         outputTokens: aiResponse?.usage?.outputTokens || 0,
