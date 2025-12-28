@@ -6,6 +6,7 @@ import ProblemStatementCard from '../components/ProblemStatementCard'
 import PersonaCard from '../components/PersonaCard'
 import RolesCard from '../components/RolesCard'
 import DecisionModal from '../components/DecisionModal'
+import ApprovalQueue from '../components/ApprovalQueue'
 import './SquadDetail.css'
 
 export default function SquadDetail() {
@@ -18,6 +19,8 @@ export default function SquadDetail() {
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ name: '', description: '', status: '' })
   const [selectedDecision, setSelectedDecision] = useState(null)
+  const [pendingSuggestions, setPendingSuggestions] = useState([])
+  const [showApprovalQueue, setShowApprovalQueue] = useState(false)
 
   // Number of members shown in the preview before "Ver todos" button
   const MEMBERS_PREVIEW_LIMIT = 3
@@ -51,11 +54,35 @@ export default function SquadDetail() {
         description: data.squad.description || '',
         status: data.squad.status
       })
+
+      // Load pending suggestions
+      loadPendingSuggestions()
     } catch (err) {
       console.error('Error loading squad:', err)
       setError(err.message || 'Erro ao carregar squad')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadPendingSuggestions = async () => {
+    try {
+      const res = await fetch(
+        `/.netlify/functions/suggestion-approvals?squad_id=${squadId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      if (res.ok) {
+        const data = await res.json()
+        setPendingSuggestions(data.suggestions || [])
+      }
+    } catch (err) {
+      console.error('Error loading pending suggestions:', err)
+      // Non-critical error, don't show to user
     }
   }
 
@@ -246,6 +273,25 @@ export default function SquadDetail() {
           </div>
         </div>
 
+        {/* Pending Suggestions Banner */}
+        {pendingSuggestions.length > 0 && (
+          <div className="pending-suggestions-banner">
+            <div className="pending-suggestions-content">
+              <div className="pending-suggestions-icon">✨</div>
+              <div className="pending-suggestions-text">
+                <strong>Sugestões da IA Pendentes</strong>
+                <p>Existem {pendingSuggestions.length} sugestões aguardando sua aprovação</p>
+              </div>
+            </div>
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowApprovalQueue(true)}
+            >
+              Revisar Sugestões →
+            </button>
+          </div>
+        )}
+
         {/* Indicator Cards */}
         <div className="indicators-grid">
           <div className="indicator-card">
@@ -397,6 +443,21 @@ export default function SquadDetail() {
           </div>
         )}
       </div>
+
+      {/* Approval Queue Modal */}
+      {showApprovalQueue && (
+        <ApprovalQueue
+          squadId={squadId}
+          onComplete={() => {
+            setShowApprovalQueue(false)
+            loadSquadOverview()
+          }}
+          onClose={() => {
+            setShowApprovalQueue(false)
+            loadPendingSuggestions()
+          }}
+        />
+      )}
 
       {/* Decision Modal */}
       {selectedDecision && (
