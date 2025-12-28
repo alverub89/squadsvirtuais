@@ -180,13 +180,21 @@ async function generateProposal(event, userId) {
   let outputSnapshot = null;
 
   try {
-    aiResponse = await callOpenAI({
+    const openAIParams = {
       systemInstructions: promptVersion.system_instructions,
       userPrompt,
       model: promptVersion.model_name,
       temperature: promptVersion.temperature,
       jsonMode: true,
-    });
+    };
+
+    // Apply max_tokens if available in prompt version
+    if (promptVersion.max_tokens != null && promptVersion.max_tokens > 0) {
+      openAIParams.maxTokens = promptVersion.max_tokens;
+      console.log("[ai-structure-proposal] Applying max_tokens from prompt version:", promptVersion.max_tokens);
+    }
+
+    aiResponse = await callOpenAI(openAIParams);
 
     // Build output snapshot immediately after OpenAI response
     outputSnapshot = {
@@ -220,13 +228,37 @@ async function generateProposal(event, userId) {
       console.log("[ai-structure-proposal] AI requested clarification:", parsedResponse.clarification_question);
     }
 
-    if (!parsedResponse.proposal) {
+    // Support both JSON formats:
+    // Format A (wrapped): { proposal: {...}, uncertainties?: [...] }
+    // Format B (direct): { decision_context, personas, squad_structure, ... } or the actual expected fields
+    const proposalPayload = parsedResponse.proposal ?? parsedResponse;
+
+    // Validate minimum required fields for a valid proposal
+    // The prompt actually generates: suggested_workflow, suggested_roles, suggested_personas
+    const hasMinimumFields = 
+      proposalPayload &&
+      typeof proposalPayload === 'object' &&
+      (
+        // Check for expected structure from the prompt
+        (Array.isArray(proposalPayload.suggested_workflow) && 
+         Array.isArray(proposalPayload.suggested_roles) && 
+         Array.isArray(proposalPayload.suggested_personas)) ||
+        // Or check for alternative structure mentioned in issue  
+        (proposalPayload.decision_context && 
+         proposalPayload.squad_structure && 
+         Array.isArray(proposalPayload.personas))
+      );
+
+    if (!hasMinimumFields) {
       outputSnapshot.ok = false;
-      outputSnapshot.validation_error = "AI não retornou uma proposta válida";
-      throw new Error("AI não retornou uma proposta válida");
+      outputSnapshot.validation_error = "JSON não contém campos mínimos esperados (suggested_workflow, suggested_roles, suggested_personas ou decision_context, squad_structure, personas)";
+      throw new Error("JSON não contém campos mínimos esperados");
     }
 
-    // Store the proposal
+    // Extract uncertainties - can be at root level or inside proposal
+    const uncertainties = proposalPayload.uncertainties || parsedResponse.uncertainties || [];
+
+    // Store the proposal with normalized payload
     const proposalResult = await query(
       `INSERT INTO sv.ai_structure_proposals (
         squad_id,
@@ -249,8 +281,8 @@ async function generateProposal(event, userId) {
         workspaceId,
         sourceContext,
         JSON.stringify(inputSnapshot),
-        JSON.stringify(parsedResponse.proposal),
-        JSON.stringify(parsedResponse.proposal.uncertainties || []),
+        JSON.stringify(proposalPayload),
+        JSON.stringify(uncertainties),
         aiResponse.model,
         promptVersion.id,
         userId,
@@ -284,8 +316,8 @@ async function generateProposal(event, userId) {
         id: proposalId,
         squad_id,
         status: "DRAFT",
-        proposal_payload: parsedResponse.proposal,
-        uncertainties: parsedResponse.proposal.uncertainties || [],
+        proposal_payload: proposalPayload,
+        uncertainties: uncertainties,
         source_context: sourceContext,
         created_at: proposalResult.rows[0].created_at,
       },
@@ -381,8 +413,14 @@ async function confirmProposal(event, proposalId, userId) {
     return json(403, { error: "Acesso negado ao workspace" });
   }
 
+  // Defensive parsing: proposal_payload can be string (json) or object (jsonb)
+  const storedPayload = proposal.proposal_payload;
+  const storedProposal = typeof storedPayload === "string" 
+    ? JSON.parse(storedPayload) 
+    : storedPayload;
+
   // User can optionally provide edited proposal
-  const finalProposal = body.edited_proposal || JSON.parse(proposal.proposal_payload);
+  const finalProposal = body.edited_proposal || storedProposal;
 
   // Update proposal status
   await query(
@@ -526,13 +564,22 @@ async function getLatestProposal(event, userId) {
 
   const proposal = result.rows[0];
 
+  // Defensive parsing: handle both string and object types
+  const payloadParsed = typeof proposal.proposal_payload === "string"
+    ? JSON.parse(proposal.proposal_payload)
+    : proposal.proposal_payload;
+
+  const uncertaintiesParsed = typeof proposal.uncertainties === "string"
+    ? JSON.parse(proposal.uncertainties || "[]")
+    : (proposal.uncertainties || []);
+
   return json(200, {
     proposal: {
       id: proposal.id,
       squad_id: squadId,
       status: proposal.status,
-      proposal_payload: JSON.parse(proposal.proposal_payload),
-      uncertainties: JSON.parse(proposal.uncertainties || "[]"),
+      proposal_payload: payloadParsed,
+      uncertainties: uncertaintiesParsed,
       created_at: proposal.created_at,
     },
   });

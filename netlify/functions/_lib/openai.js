@@ -19,6 +19,7 @@ const openai = new OpenAI({
  * @param {string} params.model - Model to use (default: gpt-4)
  * @param {number} params.temperature - Temperature (default: 0.7)
  * @param {boolean} params.jsonMode - Whether to request JSON response (default: true)
+ * @param {number} params.maxTokens - Maximum tokens for output (optional)
  * @returns {Promise<Object>} Response with content, usage stats, and execution time
  */
 async function callOpenAI({
@@ -27,6 +28,7 @@ async function callOpenAI({
   model = "gpt-4",
   temperature = 0.7,
   jsonMode = true,
+  maxTokens = null,
 }) {
   const startTime = Date.now();
 
@@ -50,6 +52,13 @@ async function callOpenAI({
     // Request JSON response format if enabled
     if (jsonMode) {
       requestParams.response_format = { type: "json_object" };
+    }
+
+    // Apply max_tokens if provided
+    if (maxTokens != null && maxTokens > 0) {
+      const maxTokensValue = Number(maxTokens);
+      requestParams.max_tokens = maxTokensValue;
+      console.log("[openai] Applying max_tokens limit:", maxTokensValue);
     }
 
     const completion = await openai.chat.completions.create(requestParams);
