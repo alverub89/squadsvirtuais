@@ -238,7 +238,7 @@ exports.handler = async (event) => {
     // Get members preview (first 3 roles and personas)
     // Fetch roles and personas to display as "members"
     const [rolesPreview, personasPreview] = await Promise.all([
-      // Get first 2 active roles
+      // Get up to 2 active roles (will be combined with personas for preview)
       query(
         `
         SELECT 
@@ -254,7 +254,7 @@ exports.handler = async (event) => {
         `,
         [squadId]
       ),
-      // Get first 2 personas
+      // Get up to 2 personas (will be combined with roles for preview)
       query(
         `
         SELECT 
