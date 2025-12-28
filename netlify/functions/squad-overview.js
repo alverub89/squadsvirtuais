@@ -186,7 +186,7 @@ exports.handler = async (event) => {
     }
 
     // Get counts
-    const [issuesCount, phasesData, membersCount] = await Promise.all([
+    const [issuesCount, phasesData, rolesCount, personasCount] = await Promise.all([
       // Count issues
       query(
         `SELECT COUNT(*) as count FROM sv.issues WHERE squad_id = $1`,
@@ -203,19 +203,28 @@ exports.handler = async (event) => {
         `,
         [squadId]
       ),
-      // Count active members
+      // Count active roles (papéis) associated with the squad
       query(
         `
         SELECT COUNT(*) as count 
-        FROM sv.squad_members 
+        FROM sv.squad_roles 
         WHERE squad_id = $1 AND active = true
+        `,
+        [squadId]
+      ),
+      // Count personas associated with the squad
+      query(
+        `
+        SELECT COUNT(*) as count 
+        FROM sv.squad_personas 
+        WHERE squad_id = $1
         `,
         [squadId]
       ),
     ]);
 
     const counts = {
-      members: parseInt(membersCount.rows[0]?.count || 0),
+      members: parseInt(rolesCount.rows[0]?.count || 0) + parseInt(personasCount.rows[0]?.count || 0),
       issues: parseInt(issuesCount.rows[0]?.count || 0),
       phase: {
         current: phasesData.rows[0]?.max_order || 0,
