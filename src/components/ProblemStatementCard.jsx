@@ -177,9 +177,25 @@ export default function ProblemStatementCard({ squadId, onUpdate }) {
   }
 
   const formatRelativeTime = (dateString) => {
+    if (!dateString) {
+      return "Nunca atualizado"
+    }
+    
     const date = new Date(dateString)
     const now = new Date()
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return "Data inválida"
+    }
+    
     const diffMs = now - date
+    
+    // Check for future dates or invalid negative differences
+    if (diffMs < 0) {
+      return "Recém criado"
+    }
+    
     const diffMinutes = Math.floor(diffMs / 60000)
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
