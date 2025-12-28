@@ -685,12 +685,15 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
       
       // Check for existing phases to avoid duplicates
       const existingPhasesResult = await query(
-        `SELECT name, order_index FROM sv.phases WHERE squad_id = $1`,
+        `SELECT name, order_index FROM sv.phases WHERE squad_id = $1 ORDER BY order_index DESC`,
         [squadId]
       );
       
       const existingPhases = existingPhasesResult.rows;
       console.log(`[suggestion-approvals] Found ${existingPhases.length} existing phases`);
+      
+      // Get the max order_index to continue sequence
+      const maxOrderIndex = existingPhases.length > 0 ? existingPhases[0].order_index : 0;
       
       // Build a set of existing phase names (case-insensitive) for quick lookup
       const existingPhaseNames = new Set(
@@ -710,6 +713,9 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
           continue;
         }
         
+        // Calculate order_index: continue from max existing order
+        const orderIndex = maxOrderIndex + insertedCount + 1;
+        
         // Insert new phase
         await query(
           `INSERT INTO sv.phases (
@@ -717,11 +723,11 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
             name,
             order_index
           ) VALUES ($1, $2, $3)`,
-          [squadId, phaseName, i + 1]
+          [squadId, phaseName, orderIndex]
         );
         
         insertedCount++;
-        console.log(`[suggestion-approvals] Inserted phase: ${phaseName} with order ${i + 1}`);
+        console.log(`[suggestion-approvals] Inserted phase: ${phaseName} with order ${orderIndex}`);
       }
       
       console.log(`[suggestion-approvals] Phase persistence completed: ${insertedCount} new phases inserted, ${phases.length - insertedCount} duplicates skipped`);
