@@ -261,9 +261,18 @@ async function approveSuggestion(event, suggestionId, userId) {
 
   // Persist suggestion to appropriate table based on type
   try {
+    console.log(`[suggestion-approvals] Starting persistence for suggestion ${suggestionId}, type: ${suggestion.suggestion_type}`);
     await persistSuggestion(suggestion.suggestion_type, finalPayload, suggestion.squad_id, suggestion.workspace_id, userId);
+    console.log(`[suggestion-approvals] Successfully persisted suggestion ${suggestionId}`);
   } catch (persistError) {
     console.error('[suggestion-approvals] Error persisting suggestion:', persistError.message);
+    console.error('[suggestion-approvals] Error stack:', persistError.stack);
+    console.error('[suggestion-approvals] Suggestion details:', {
+      suggestionId,
+      type: suggestion.suggestion_type,
+      squadId: suggestion.squad_id,
+      workspaceId: suggestion.workspace_id
+    });
     return json(500, { 
       error: "Erro ao persistir sugestão", 
       details: persistError.message 
@@ -398,6 +407,7 @@ async function rejectSuggestion(event, suggestionId, userId) {
  * Persist approved suggestion to appropriate database table
  */
 async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
+  console.log(`[suggestion-approvals] persistSuggestion called with type: ${type}, squadId: ${squadId}, workspaceId: ${workspaceId}`);
   const data = typeof payload === 'string' ? JSON.parse(payload) : payload;
 
   switch (type) {
@@ -447,35 +457,77 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
       break;
 
     case 'persona':
-      await query(
-        `INSERT INTO sv.personas (
-          workspace_id,
-          name,
-          type,
-          description,
-          goals,
-          pain_points,
-          active
-        ) VALUES ($1, $2, $3, $4, $5, $6, true)
-        RETURNING id`,
-        [
-          workspaceId,
-          data.name,
-          data.type || 'user',
-          data.description,
-          data.goals,
-          data.pain_points
-        ]
-      ).then(async (result) => {
-        const personaId = result.rows[0].id;
-        // Link persona to squad
-        await query(
-          `INSERT INTO sv.squad_personas (squad_id, persona_id)
-           VALUES ($1, $2)
-           ON CONFLICT DO NOTHING`,
-          [squadId, personaId]
+      console.log(`[suggestion-approvals] Processing persona: ${data.name} for squad ${squadId}`);
+      
+      // Step 1: Check if persona already exists in the workspace
+      const existingPersonaCheck = await query(
+        `SELECT id FROM sv.personas 
+         WHERE workspace_id = $1 AND LOWER(TRIM(name)) = LOWER(TRIM($2))
+         LIMIT 1`,
+        [workspaceId, data.name]
+      );
+
+      let personaId;
+      
+      if (existingPersonaCheck.rows.length > 0) {
+        // Persona already exists
+        personaId = existingPersonaCheck.rows[0].id;
+        console.log(`[suggestion-approvals] Persona already exists with id: ${personaId}`);
+      } else {
+        // Step 2: Create new persona
+        console.log(`[suggestion-approvals] Creating new persona: ${data.name}`);
+        const createPersonaResult = await query(
+          `INSERT INTO sv.personas (
+            workspace_id,
+            name,
+            type,
+            description,
+            goals,
+            pain_points,
+            active
+          ) VALUES ($1, $2, $3, $4, $5, $6, true)
+          RETURNING id`,
+          [
+            workspaceId,
+            data.name,
+            data.type || 'cliente',
+            data.description,
+            data.goals,
+            data.pain_points
+          ]
         );
-      });
+        
+        personaId = createPersonaResult.rows[0].id;
+        console.log(`[suggestion-approvals] Persona created with id: ${personaId}`);
+      }
+
+      // Step 3: Always link persona to squad (whether new or existing)
+      const linkPersonaResult = await query(
+        `INSERT INTO sv.squad_personas (squad_id, persona_id)
+         VALUES ($1, $2)
+         ON CONFLICT (squad_id, persona_id) DO NOTHING
+         RETURNING id`,
+        [squadId, personaId]
+      );
+      
+      if (linkPersonaResult.rows.length > 0) {
+        console.log(`[suggestion-approvals] Persona linked to squad with association id: ${linkPersonaResult.rows[0].id}`);
+      } else {
+        console.log(`[suggestion-approvals] Persona-squad link already exists`);
+      }
+      
+      // Step 4: Verify the link was created
+      const verifyLinkResult = await query(
+        `SELECT id FROM sv.squad_personas WHERE squad_id = $1 AND persona_id = $2`,
+        [squadId, personaId]
+      );
+      
+      if (verifyLinkResult.rows.length === 0) {
+        console.error(`[suggestion-approvals] ERROR: Failed to link persona ${personaId} to squad ${squadId}`);
+        throw new Error(`Falha ao vincular persona à squad`);
+      }
+      
+      console.log(`[suggestion-approvals] Persona persistence completed successfully`);
       break;
 
     case 'governance':
@@ -495,34 +547,36 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
       break;
 
     case 'squad_structure_role':
-      // Create squad role
-      // First check if role exists in global or workspace roles
+      console.log(`[suggestion-approvals] Processing role: ${data.role || data.label} for squad ${squadId}`);
+      
+      const roleLabel = data.role || data.label;
+      
+      // Step 1: Check if role exists in global or workspace roles
       const roleResult = await query(
-        `SELECT id, 'global' as source FROM sv.roles WHERE label = $1
+        `SELECT id, 'global' as source FROM sv.roles WHERE LOWER(TRIM(label)) = LOWER(TRIM($1))
          UNION ALL
-         SELECT id, 'workspace' as source FROM sv.workspace_roles WHERE workspace_id = $2 AND label = $1
+         SELECT id, 'workspace' as source FROM sv.workspace_roles WHERE workspace_id = $2 AND LOWER(TRIM(label)) = LOWER(TRIM($1))
          LIMIT 1`,
-        [data.role || data.label, workspaceId]
+        [roleLabel, workspaceId]
       );
 
+      let roleId = null;
+      let workspaceRoleId = null;
+
       if (roleResult.rows.length > 0) {
+        // Role already exists
         const existingRole = roleResult.rows[0];
-        await query(
-          `INSERT INTO sv.squad_roles (
-            squad_id,
-            role_id,
-            workspace_role_id,
-            active
-          ) VALUES ($1, $2, $3, true)
-          ON CONFLICT DO NOTHING`,
-          [
-            squadId,
-            existingRole.source === 'global' ? existingRole.id : null,
-            existingRole.source === 'workspace' ? existingRole.id : null
-          ]
-        );
+        
+        if (existingRole.source === 'global') {
+          roleId = existingRole.id;
+          console.log(`[suggestion-approvals] Role already exists as global role with id: ${roleId}`);
+        } else {
+          workspaceRoleId = existingRole.id;
+          console.log(`[suggestion-approvals] Role already exists as workspace role with id: ${workspaceRoleId}`);
+        }
       } else {
-        // Create as workspace role first
+        // Step 2: Create new workspace role
+        console.log(`[suggestion-approvals] Creating new workspace role: ${roleLabel}`);
         const newRoleResult = await query(
           `INSERT INTO sv.workspace_roles (
             workspace_id,
@@ -533,22 +587,65 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
           RETURNING id`,
           [
             workspaceId,
-            data.role || data.label,
+            roleLabel,
             data.description,
             data.accountability || data.responsibility
           ]
         );
         
-        const newRoleId = newRoleResult.rows[0].id;
-        await query(
+        workspaceRoleId = newRoleResult.rows[0].id;
+        console.log(`[suggestion-approvals] Workspace role created with id: ${workspaceRoleId}`);
+      }
+
+      // Step 3: Always link role to squad (whether new or existing)
+      // Check if the squad_role already exists first
+      const existingSquadRoleCheck = await query(
+        `SELECT id FROM sv.squad_roles 
+         WHERE squad_id = $1 AND (
+           (role_id IS NOT NULL AND role_id = $2) OR 
+           (workspace_role_id IS NOT NULL AND workspace_role_id = $3)
+         )`,
+        [squadId, roleId, workspaceRoleId]
+      );
+
+      if (existingSquadRoleCheck.rows.length > 0) {
+        console.log(`[suggestion-approvals] Squad role link already exists with id: ${existingSquadRoleCheck.rows[0].id}`);
+      } else {
+        console.log(`[suggestion-approvals] Linking role to squad...`);
+        const linkRoleResult = await query(
           `INSERT INTO sv.squad_roles (
             squad_id,
+            role_id,
             workspace_role_id,
             active
-          ) VALUES ($1, $2, true)`,
-          [squadId, newRoleId]
+          ) VALUES ($1, $2, $3, true)
+          RETURNING id`,
+          [
+            squadId,
+            roleId,
+            workspaceRoleId
+          ]
         );
+        
+        console.log(`[suggestion-approvals] Role linked to squad with squad_role id: ${linkRoleResult.rows[0].id}`);
       }
+      
+      // Step 4: Verify the link was created
+      const verifyRoleLinkResult = await query(
+        `SELECT id FROM sv.squad_roles 
+         WHERE squad_id = $1 AND (
+           (role_id IS NOT NULL AND role_id = $2) OR 
+           (workspace_role_id IS NOT NULL AND workspace_role_id = $3)
+         )`,
+        [squadId, roleId, workspaceRoleId]
+      );
+      
+      if (verifyRoleLinkResult.rows.length === 0) {
+        console.error(`[suggestion-approvals] ERROR: Failed to link role to squad ${squadId}`);
+        throw new Error(`Falha ao vincular papel à squad`);
+      }
+      
+      console.log(`[suggestion-approvals] Role persistence completed successfully`);
       break;
 
     case 'phase':
