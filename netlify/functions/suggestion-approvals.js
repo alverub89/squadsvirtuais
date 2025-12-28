@@ -598,15 +598,14 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
       }
 
       // Step 3: Always link role to squad (whether new or existing)
+      // Build the query to check/verify based on which ID we have
+      const roleCheckQuery = roleId 
+        ? `SELECT id FROM sv.squad_roles WHERE squad_id = $1 AND role_id = $2`
+        : `SELECT id FROM sv.squad_roles WHERE squad_id = $1 AND workspace_role_id = $2`;
+      const roleCheckParams = roleId ? [squadId, roleId] : [squadId, workspaceRoleId];
+
       // Check if the squad_role already exists first
-      const existingSquadRoleCheck = await query(
-        `SELECT id FROM sv.squad_roles 
-         WHERE squad_id = $1 AND (
-           (role_id IS NOT NULL AND role_id = $2) OR 
-           (workspace_role_id IS NOT NULL AND workspace_role_id = $3)
-         )`,
-        [squadId, roleId, workspaceRoleId]
-      );
+      const existingSquadRoleCheck = await query(roleCheckQuery, roleCheckParams);
 
       if (existingSquadRoleCheck.rows.length > 0) {
         console.log(`[suggestion-approvals] Squad role link already exists with id: ${existingSquadRoleCheck.rows[0].id}`);
@@ -631,14 +630,7 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
       }
       
       // Step 4: Verify the link was created
-      const verifyRoleLinkResult = await query(
-        `SELECT id FROM sv.squad_roles 
-         WHERE squad_id = $1 AND (
-           (role_id IS NOT NULL AND role_id = $2) OR 
-           (workspace_role_id IS NOT NULL AND workspace_role_id = $3)
-         )`,
-        [squadId, roleId, workspaceRoleId]
-      );
+      const verifyRoleLinkResult = await query(roleCheckQuery, roleCheckParams);
       
       if (verifyRoleLinkResult.rows.length === 0) {
         console.error(`[suggestion-approvals] ERROR: Failed to link role to squad ${squadId}`);
