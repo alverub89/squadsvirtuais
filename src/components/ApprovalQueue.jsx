@@ -9,7 +9,6 @@ export default function ApprovalQueue({ squadId, proposalId, onComplete, onClose
   const [error, setError] = useState(null)
   const [suggestions, setSuggestions] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [processing, setProcessing] = useState(false)
 
   useEffect(() => {
     if (proposalId) {
@@ -73,16 +72,14 @@ export default function ApprovalQueue({ squadId, proposalId, onComplete, onClose
     }
   }
 
-  const handleApprove = async (suggestionId) => {
-    setProcessing(true)
+  const handleApprove = async () => {
     // Wait a bit to allow the modal's approve action to complete
     setTimeout(() => {
       moveToNext()
     }, 500)
   }
 
-  const handleReject = async (suggestionId) => {
-    setProcessing(true)
+  const handleReject = async () => {
     // Wait a bit to allow the modal's reject action to complete
     setTimeout(() => {
       moveToNext()
@@ -90,7 +87,6 @@ export default function ApprovalQueue({ squadId, proposalId, onComplete, onClose
   }
 
   const moveToNext = () => {
-    setProcessing(false)
     if (currentIndex < suggestions.length - 1) {
       setCurrentIndex(currentIndex + 1)
     } else {
