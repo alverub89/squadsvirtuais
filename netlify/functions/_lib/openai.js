@@ -38,10 +38,13 @@ async function callOpenAI({
       { role: "user", content: userPrompt },
     ];
 
+    // Convert temperature to number if it's a string (from PostgreSQL numeric type)
+    const tempValue = temperature == null ? 0.7 : Number(temperature);
+
     const requestParams = {
       model,
       messages,
-      temperature,
+      temperature: tempValue,
     };
 
     // Request JSON response format if enabled

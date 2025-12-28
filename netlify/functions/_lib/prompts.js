@@ -30,8 +30,28 @@ async function getActivePrompt(promptName) {
       [promptName]
     );
 
+    console.log("[prompts] Query executed OK, rows returned:", result.rows.length);
+
     if (result.rows.length === 0) {
       console.log("[prompts] No active prompt found for:", promptName);
+      
+      // Additional diagnostic: check if prompt exists but no active version
+      const checkPrompt = await query(
+        `SELECT id, name FROM sv.ai_prompts WHERE name = $1`,
+        [promptName]
+      );
+      
+      if (checkPrompt.rows.length > 0) {
+        console.warn("[prompts] Prompt exists but no active version found!");
+        const versions = await query(
+          `SELECT version, is_active FROM sv.ai_prompt_versions WHERE prompt_id = $1`,
+          [checkPrompt.rows[0].id]
+        );
+        console.warn("[prompts] Existing versions:", JSON.stringify(versions.rows));
+      } else {
+        console.warn("[prompts] Prompt does not exist in database!");
+      }
+      
       return null;
     }
 
@@ -55,7 +75,7 @@ function renderPrompt(template, variables) {
 
   // Replace simple variables {{variable}}
   Object.keys(variables).forEach((key) => {
-    const value = variables[key] || "";
+    const value = variables[key] != null ? String(variables[key]) : "";
     const regex = new RegExp(`{{${key}}}`, "g");
     rendered = rendered.replace(regex, value);
   });
@@ -63,7 +83,10 @@ function renderPrompt(template, variables) {
   // Handle conditional blocks {{#if variable}}...{{/if}}
   // This is a simplified implementation - only handles present/not present
   rendered = rendered.replace(/{{#if\s+(\w+)}}([\s\S]*?){{\/if}}/g, (match, varName, content) => {
-    return variables[varName] ? content : "";
+    const varValue = variables[varName];
+    // Consider variable as "present" if it's not null, undefined, empty string, or false
+    const isPresent = varValue != null && varValue !== "" && varValue !== false;
+    return isPresent ? content : "";
   });
 
   // Check for any remaining unresolved variables and log warning
@@ -95,11 +118,12 @@ async function logPromptExecution({
   userId,
 }) {
   try {
+    // Note: proposal_id column may not exist in all database versions
+    // Logging without it to ensure compatibility
     await query(
       `
       INSERT INTO sv.ai_prompt_executions (
         prompt_version_id,
-        proposal_id,
         workspace_id,
         input_tokens,
         output_tokens,
@@ -109,11 +133,10 @@ async function logPromptExecution({
         error_message,
         executed_by_user_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `,
       [
         promptVersionId,
-        proposalId,
         workspaceId,
         inputTokens,
         outputTokens,
