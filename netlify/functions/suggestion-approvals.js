@@ -395,6 +395,23 @@ async function rejectSuggestion(event, suggestionId, userId) {
 }
 
 /**
+ * Generate a slug/code from a label string
+ * Example: "Tech Lead" -> "tech_lead"
+ */
+function generateCodeFromLabel(label) {
+  if (!label) return 'unknown_role';
+  
+  return label
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/-+/g, '_') // Replace hyphens with underscores
+    .replace(/_+/g, '_') // Replace multiple underscores with single
+    .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+}
+
+/**
  * Persist approved suggestion to appropriate database table
  */
 async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
@@ -523,17 +540,22 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
         );
       } else {
         // Create as workspace role first
+        const roleLabel = data.role || data.label;
+        const roleCode = generateCodeFromLabel(roleLabel);
+        
         const newRoleResult = await query(
           `INSERT INTO sv.workspace_roles (
             workspace_id,
+            code,
             label,
             description,
             responsibilities
-          ) VALUES ($1, $2, $3, $4)
+          ) VALUES ($1, $2, $3, $4, $5)
           RETURNING id`,
           [
             workspaceId,
-            data.role || data.label,
+            roleCode,
+            roleLabel,
             data.description,
             data.accountability || data.responsibility
           ]
@@ -560,9 +582,8 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
           `INSERT INTO sv.phases (
             squad_id,
             name,
-            order_index,
-            status
-          ) VALUES ($1, $2, $3, 'rascunho')`,
+            order_index
+          ) VALUES ($1, $2, $3)`,
           [squadId, phase.name, i + 1]
         );
       }
