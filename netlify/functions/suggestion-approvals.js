@@ -680,17 +680,57 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
     case 'phase':
       // Data is an array of phases
       const phases = Array.isArray(data) ? data : [data];
+      
+      console.log(`[suggestion-approvals] Processing ${phases.length} phases for squad ${squadId}`);
+      
+      // Check for existing phases to avoid duplicates
+      const existingPhasesResult = await query(
+        `SELECT name, order_index FROM sv.phases WHERE squad_id = $1 ORDER BY order_index DESC`,
+        [squadId]
+      );
+      
+      const existingPhases = existingPhasesResult.rows;
+      console.log(`[suggestion-approvals] Found ${existingPhases.length} existing phases`);
+      
+      // Get the highest order_index to continue sequence (first row due to DESC ordering)
+      const maxOrderIndex = existingPhases.length > 0 ? existingPhases[0].order_index : 0;
+      
+      // Build a set of existing phase names (case-insensitive) for quick lookup
+      const existingPhaseNames = new Set(
+        existingPhases.map(p => p.name.toLowerCase().trim())
+      );
+      
+      // Insert only phases that don't already exist
+      let insertedCount = 0;
       for (let i = 0; i < phases.length; i++) {
         const phase = phases[i];
+        const phaseName = phase.name.trim();
+        const phaseNameLower = phaseName.toLowerCase();
+        
+        // Skip if phase with same name already exists
+        if (existingPhaseNames.has(phaseNameLower)) {
+          console.log(`[suggestion-approvals] Skipping duplicate phase: ${phaseName}`);
+          continue;
+        }
+        
+        // Calculate order_index: continue from max existing order
+        const orderIndex = maxOrderIndex + insertedCount + 1;
+        
+        // Insert new phase
         await query(
           `INSERT INTO sv.phases (
             squad_id,
             name,
             order_index
           ) VALUES ($1, $2, $3)`,
-          [squadId, phase.name, i + 1]
+          [squadId, phaseName, orderIndex]
         );
+        
+        insertedCount++;
+        console.log(`[suggestion-approvals] Inserted phase: ${phaseName} with order ${orderIndex}`);
       }
+      
+      console.log(`[suggestion-approvals] Phase persistence completed: ${insertedCount} new phases inserted, ${phases.length - insertedCount} duplicates skipped`);
       break;
 
     case 'critical_unknown':
