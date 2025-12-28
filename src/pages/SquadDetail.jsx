@@ -19,6 +19,9 @@ export default function SquadDetail() {
   const [editForm, setEditForm] = useState({ name: '', description: '', status: '' })
   const [selectedDecision, setSelectedDecision] = useState(null)
 
+  // Number of members shown in the preview before "Ver todos" button
+  const MEMBERS_PREVIEW_LIMIT = 3
+
   const loadSquadOverview = async () => {
     try {
       setLoading(true)
@@ -325,7 +328,7 @@ export default function SquadDetail() {
               <div className="sidebar-card">
                 <div className="sidebar-card-header">
                   <h3>Membros da Squad</h3>
-                  {counts.members > 3 && (
+                  {counts.members > MEMBERS_PREVIEW_LIMIT && (
                     <button className="btn-link">Ver todos →</button>
                   )}
                 </div>

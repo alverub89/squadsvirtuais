@@ -177,7 +177,7 @@ export default function ProblemStatementCard({ squadId, onUpdate }) {
   }
 
   const formatRelativeTime = (dateString) => {
-    if (!dateString) {
+    if (dateString == null || dateString === '') {
       return "Nunca atualizado"
     }
     
