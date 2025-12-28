@@ -132,7 +132,7 @@
 .decision-structured {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .decision-field {
@@ -146,15 +146,53 @@
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #475569;
+  color: #1e40af;
   margin-bottom: 8px;
-  text-transform: capitalize;
+  text-transform: none;
 }
 
 .decision-field-value {
   font-size: 14px;
   color: #0f172a;
   line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Empty field styling */
+.empty-field {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* Nested fields styling */
+.nested-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.nested-field {
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.nested-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.nested-field-value {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
