@@ -236,9 +236,10 @@ exports.handler = async (event) => {
     const timeline = await buildTimeline(squadId);
 
     // Get members preview (first 3 roles and personas)
-    // Fetch roles and personas to display as "members"
+    // Strategy: Fetch up to 2 from each type to ensure balanced representation,
+    // then combine and slice to 3 items total
     const [rolesPreview, personasPreview] = await Promise.all([
-      // Get up to 2 active roles (will be combined with personas for preview)
+      // Get up to 2 active roles (ensures at least one role in preview if available)
       query(
         `
         SELECT 
@@ -254,7 +255,7 @@ exports.handler = async (event) => {
         `,
         [squadId]
       ),
-      // Get up to 2 personas (will be combined with roles for preview)
+      // Get up to 2 personas (ensures at least one persona in preview if available)
       query(
         `
         SELECT 
