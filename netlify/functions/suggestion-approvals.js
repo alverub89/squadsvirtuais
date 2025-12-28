@@ -407,7 +407,7 @@ function generateCodeFromLabel(label) {
   const code = label
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/[^a-z0-9\s_-]/g, '') // Remove special characters except spaces, underscores and hyphens
     .replace(/\s+/g, '_') // Replace spaces with underscores
     .replace(/-+/g, '_') // Replace hyphens with underscores
     .replace(/_+/g, '_') // Replace multiple underscores with single
