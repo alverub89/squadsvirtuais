@@ -318,6 +318,11 @@ exports.handler = async (event) => {
         [squadRoleId]
       );
 
+      if (result.rows.length === 0) {
+        console.log("[squad-roles] Squad role não encontrado para deletar:", squadRoleId);
+        return json(404, { error: "Squad role não encontrado" });
+      }
+
       console.log("[squad-roles] Vínculo de squad role removido:", squadRoleId);
 
       return json(200, {
