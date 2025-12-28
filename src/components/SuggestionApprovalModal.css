@@ -101,6 +101,21 @@
   flex: 1;
 }
 
+.suggestion-modal-error {
+  padding: 1rem;
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  color: #991b1b;
+  font-size: 0.875rem;
+}
+
+.suggestion-modal-error strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
 .suggestion-modal-info-box {
   display: flex;
   gap: 1rem;

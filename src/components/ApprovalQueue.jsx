@@ -73,17 +73,17 @@ export default function ApprovalQueue({ squadId, proposalId, onComplete, onClose
   }
 
   const handleApprove = async () => {
-    // Wait a bit to allow the modal's approve action to complete
-    setTimeout(() => {
-      moveToNext()
-    }, 500)
+    // The modal's approval action will complete, then call this
+    // Just need to wait a tiny bit for the state to settle
+    await new Promise(resolve => setTimeout(resolve, 300))
+    moveToNext()
   }
 
   const handleReject = async () => {
-    // Wait a bit to allow the modal's reject action to complete
-    setTimeout(() => {
-      moveToNext()
-    }, 500)
+    // The modal's rejection action will complete, then call this
+    // Just need to wait a tiny bit for the state to settle
+    await new Promise(resolve => setTimeout(resolve, 300))
+    moveToNext()
   }
 
   const moveToNext = () => {

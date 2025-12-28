@@ -3,6 +3,9 @@ const { query } = require("./_lib/db");
 const { authenticateRequest } = require("./_lib/auth");
 const { json } = require("./_lib/response");
 
+// Constants
+const PROBLEM_STATEMENT_TITLE = 'Problem Statement';
+
 /**
  * Parse AI proposal payload and create individual suggestion proposals
  * @param {Object} proposal - AI structure proposal
@@ -257,7 +260,15 @@ async function approveSuggestion(event, suggestionId, userId) {
   const wasEdited = !!body.edited_payload;
 
   // Persist suggestion to appropriate table based on type
-  await persistSuggestion(suggestion.suggestion_type, finalPayload, suggestion.squad_id, suggestion.workspace_id, userId);
+  try {
+    await persistSuggestion(suggestion.suggestion_type, finalPayload, suggestion.squad_id, suggestion.workspace_id, userId);
+  } catch (persistError) {
+    console.error('[suggestion-approvals] Error persisting suggestion:', persistError.message);
+    return json(500, { 
+      error: "Erro ao persistir sugestão", 
+      details: persistError.message 
+    });
+  }
 
   // Update suggestion status
   await query(
@@ -409,20 +420,30 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
 
     case 'problem_maturity':
       // Update problem statement with maturity info
-      await query(
-        `UPDATE sv.decisions
-         SET decision = jsonb_set(
-           jsonb_set(
-             decision::jsonb,
-             '{current_stage}',
-             to_jsonb($1::text)
-           ),
-           '{confidence_level}',
-           to_jsonb($2::text)
-         )
-         WHERE squad_id = $3 AND title = 'Problem Statement'`,
-        [data.current_stage, data.confidence_level, squadId]
+      // First check if problem statement exists
+      const problemCheck = await query(
+        `SELECT id FROM sv.decisions WHERE squad_id = $1 AND title = $2 LIMIT 1`,
+        [squadId, PROBLEM_STATEMENT_TITLE]
       );
+
+      if (problemCheck.rows.length > 0) {
+        await query(
+          `UPDATE sv.decisions
+           SET decision = jsonb_set(
+             jsonb_set(
+               decision::jsonb,
+               '{current_stage}',
+               to_jsonb($1::text)
+             ),
+             '{confidence_level}',
+             to_jsonb($2::text)
+           )
+           WHERE squad_id = $3 AND title = $4`,
+          [data.current_stage, data.confidence_level, squadId, PROBLEM_STATEMENT_TITLE]
+        );
+      } else {
+        console.warn(`[suggestion-approvals] Problem Statement not found for squad ${squadId}`);
+      }
       break;
 
     case 'persona':
@@ -607,7 +628,8 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
       break;
 
     default:
-      console.warn(`[suggestion-approvals] Unknown suggestion type: ${type}`);
+      console.error(`[suggestion-approvals] Unknown suggestion type: ${type}`);
+      throw new Error(`Tipo de sugestão desconhecido: ${type}`);
   }
 }
 

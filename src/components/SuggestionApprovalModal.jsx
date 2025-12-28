@@ -13,10 +13,12 @@ export default function SuggestionApprovalModal({
   const [processing, setProcessing] = useState(false)
   const [showRejectReason, setShowRejectReason] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
+  const [error, setError] = useState(null)
 
   const handleApprove = async (editedPayload = null) => {
     try {
       setProcessing(true)
+      setError(null)
 
       const res = await fetch(
         `/.netlify/functions/suggestion-approvals/${suggestion.id}/approve`,
@@ -39,7 +41,7 @@ export default function SuggestionApprovalModal({
       if (onApprove) onApprove(suggestion.id, editedPayload)
     } catch (err) {
       console.error('Error approving suggestion:', err)
-      alert(err.message || 'Erro ao aprovar sugestão')
+      setError(err.message || 'Erro ao aprovar sugestão')
     } finally {
       setProcessing(false)
     }
@@ -48,6 +50,7 @@ export default function SuggestionApprovalModal({
   const handleReject = async () => {
     try {
       setProcessing(true)
+      setError(null)
 
       const res = await fetch(
         `/.netlify/functions/suggestion-approvals/${suggestion.id}/reject`,
@@ -70,7 +73,7 @@ export default function SuggestionApprovalModal({
       if (onReject) onReject(suggestion.id, rejectReason)
     } catch (err) {
       console.error('Error rejecting suggestion:', err)
-      alert(err.message || 'Erro ao rejeitar sugestão')
+      setError(err.message || 'Erro ao rejeitar sugestão')
     } finally {
       setProcessing(false)
     }
@@ -177,6 +180,12 @@ export default function SuggestionApprovalModal({
         </div>
 
         <div className="suggestion-modal-body">
+          {error && (
+            <div className="suggestion-modal-error">
+              <strong>Erro:</strong> {error}
+            </div>
+          )}
+
           <div className="suggestion-modal-info-box">
             <div className="suggestion-modal-info-icon">ℹ️</div>
             <div className="suggestion-modal-info-content">
