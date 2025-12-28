@@ -73,8 +73,12 @@ async function getActivePrompt(promptName) {
 function renderPrompt(template, variables) {
   let rendered = template;
 
+  // Helper function to check if a value is "present" (not null, undefined, empty string, or false)
+  const isPresent = (value) => value != null && value !== "" && value !== false;
+
   // Replace simple variables {{variable}}
   Object.keys(variables).forEach((key) => {
+    // Use empty string for null/undefined, convert everything else to string
     const value = variables[key] != null ? String(variables[key]) : "";
     const regex = new RegExp(`{{${key}}}`, "g");
     rendered = rendered.replace(regex, value);
@@ -83,10 +87,7 @@ function renderPrompt(template, variables) {
   // Handle conditional blocks {{#if variable}}...{{/if}}
   // This is a simplified implementation - only handles present/not present
   rendered = rendered.replace(/{{#if\s+(\w+)}}([\s\S]*?){{\/if}}/g, (match, varName, content) => {
-    const varValue = variables[varName];
-    // Consider variable as "present" if it's not null, undefined, empty string, or false
-    const isPresent = varValue != null && varValue !== "" && varValue !== false;
-    return isPresent ? content : "";
+    return isPresent(variables[varName]) ? content : "";
   });
 
   // Check for any remaining unresolved variables and log warning
