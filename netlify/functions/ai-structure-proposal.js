@@ -71,6 +71,7 @@ async function generateProposal(event, userId) {
   const problemStatement = JSON.parse(problemRecord.decision);
 
   // Get existing backlog (issues)
+  console.log(`[ai-structure-proposal] Buscando existing issues para squad: ${squad_id}`);
   const issuesResult = await query(
     `SELECT title, description, status
      FROM sv.issues
@@ -79,8 +80,10 @@ async function generateProposal(event, userId) {
      LIMIT 20`,
     [squad_id]
   );
+  console.log(`[ai-structure-proposal] Issues encontradas: ${issuesResult.rows.length}`);
 
   // Get existing roles
+  console.log(`[ai-structure-proposal] Buscando existing roles para squad: ${squad_id}`);
   const rolesResult = await query(
     `SELECT 
        COALESCE(sr.name, r.label, wr.label) as label,
@@ -91,8 +94,10 @@ async function generateProposal(event, userId) {
      WHERE sr.squad_id = $1 AND sr.active = true`,
     [squad_id]
   );
+  console.log(`[ai-structure-proposal] Roles encontradas: ${rolesResult.rows.length}`);
 
   // Get existing personas
+  console.log(`[ai-structure-proposal] Buscando existing personas para squad: ${squad_id}`);
   const personasResult = await query(
     `SELECT p.name, p.type, p.goals, p.pain_points
      FROM sv.personas p
@@ -100,6 +105,7 @@ async function generateProposal(event, userId) {
      WHERE sp.squad_id = $1 AND p.active = true`,
     [squad_id]
   );
+  console.log(`[ai-structure-proposal] Personas encontradas: ${personasResult.rows.length}`);
 
   // Build input snapshot
   const inputSnapshot = {
