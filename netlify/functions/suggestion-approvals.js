@@ -579,6 +579,12 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
       
       const roleLabel = data.role || data.label;
       
+      // Validate roleLabel before proceeding
+      if (!roleLabel) {
+        console.error(`[suggestion-approvals] ERROR: roleLabel is null or undefined for squad ${squadId}`);
+        throw new Error('O rótulo do papel não pode estar vazio');
+      }
+      
       // Step 1: Check if role exists in global or workspace roles
       const roleResult = await query(
         `SELECT id, 'global' as source FROM sv.roles WHERE LOWER(TRIM(label)) = LOWER(TRIM($1))
@@ -606,7 +612,6 @@ async function persistSuggestion(type, payload, squadId, workspaceId, userId) {
         // Step 2: Create new workspace role
         console.log(`[suggestion-approvals] Creating new workspace role: ${roleLabel}`);
         // Create as workspace role first
-        const roleLabel = data.role || data.label;
         const roleCode = generateCodeFromLabel(roleLabel);
         
         const newRoleResult = await query(
