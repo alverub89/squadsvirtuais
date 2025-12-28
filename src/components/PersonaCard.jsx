@@ -7,14 +7,11 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
   const [personas, setPersonas] = useState([])
   const [availablePersonas, setAvailablePersonas] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [selectedPersona, setSelectedPersona] = useState('')
-  const [editingPersonaId, setEditingPersonaId] = useState(null)
-  const [editForm, setEditForm] = useState({})
-  const [contextForm, setContextForm] = useState({
-    context_description: '',
-    focus: ''
-  })
+  const [showAllModal, setShowAllModal] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [adding, setAdding] = useState(null)
+  const [removing, setRemoving] = useState(null)
+  const [confirmRemove, setConfirmRemove] = useState(null)
 
   // Load squad personas
   const loadSquadPersonas = useCallback(async () => {
@@ -59,23 +56,27 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
       }
 
       const data = await res.json()
-      // Filter out personas already in this squad using Set for O(1) lookups
+      // Filter out personas already in this squad and inactive personas
       const squadPersonaIds = new Set(personas.map(p => p.persona_id))
-      const available = data.personas.filter(p => !squadPersonaIds.has(p.id))
+      const available = data.personas.filter(p => 
+        !squadPersonaIds.has(p.id) && (p.active !== false)
+      )
       setAvailablePersonas(available)
     } catch (err) {
       console.error('Error loading available personas:', err)
     }
   }
 
-  // Add persona to squad
-  const handleAddPersona = async () => {
-    if (!selectedPersona) {
-      alert('Selecione uma persona')
-      return
-    }
+  const openAddModal = async () => {
+    await loadAvailablePersonas()
+    setShowAddModal(true)
+  }
 
+  // Add persona to squad
+  const handleAddPersona = async (persona) => {
     try {
+      setAdding(persona.id)
+      
       const res = await fetch(
         '/.netlify/functions/squad-personas',
         {
@@ -86,9 +87,7 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
           },
           body: JSON.stringify({
             squad_id: squadId,
-            persona_id: selectedPersona,
-            context_description: contextForm.context_description,
-            focus: contextForm.focus
+            persona_id: persona.id
           })
         }
       )
@@ -98,26 +97,28 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
         throw new Error(data.error || 'Erro ao adicionar persona')
       }
 
-      setShowAddForm(false)
-      setSelectedPersona('')
-      setContextForm({ context_description: '', focus: '' })
       await loadSquadPersonas()
       if (onUpdate) onUpdate()
+      
+      // Refresh available personas list
+      await loadAvailablePersonas()
     } catch (err) {
       console.error('Error adding persona:', err)
-      alert(err.message)
+      alert(err.message || 'Erro ao adicionar persona')
+    } finally {
+      setAdding(null)
     }
   }
 
   // Remove persona from squad
-  const handleRemovePersona = async (associationId) => {
-    if (!confirm('Tem certeza que deseja remover esta persona da squad?')) {
-      return
-    }
-
+  const handleRemovePersona = async (persona) => {
+    setConfirmRemove(null)
+    
     try {
+      setRemoving(persona.association_id)
+      
       const res = await fetch(
-        `/.netlify/functions/squad-personas/${associationId}`,
+        `/.netlify/functions/squad-personas/${persona.association_id}`,
         {
           method: 'DELETE',
           headers: {
@@ -127,108 +128,22 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
       )
 
       if (!res.ok) {
-        throw new Error('Erro ao remover persona')
+        const data = await res.json()
+        throw new Error(data.error || 'Erro ao remover persona')
       }
 
       await loadSquadPersonas()
       if (onUpdate) onUpdate()
     } catch (err) {
       console.error('Error removing persona:', err)
-      alert(err.message)
+      alert(err.message || 'Erro ao remover persona')
+    } finally {
+      setRemoving(null)
     }
   }
 
-  // Edit persona (workspace-level)
-  const handleEditPersona = async (personaId) => {
-    if (!editForm.name || !editForm.type) {
-      alert('Nome e tipo são obrigatórios')
-      return
-    }
-
-    try {
-      const res = await fetch(
-        `/.netlify/functions/personas/${personaId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(editForm)
-        }
-      )
-
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Erro ao atualizar persona')
-      }
-
-      setEditingPersonaId(null)
-      setEditForm({})
-      await loadSquadPersonas()
-      if (onUpdate) onUpdate()
-    } catch (err) {
-      console.error('Error updating persona:', err)
-      alert(err.message)
-    }
-  }
-
-  // Delete persona (soft delete)
-  const handleDeletePersona = async (personaId) => {
-    if (!confirm('Tem certeza que deseja excluir esta persona? Esta ação irá desativá-la mas ela permanecerá visível em squads associadas.')) {
-      return
-    }
-
-    try {
-      const res = await fetch(
-        `/.netlify/functions/personas/${personaId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ active: false })
-        }
-      )
-
-      if (!res.ok) {
-        throw new Error('Erro ao excluir persona')
-      }
-
-      await loadSquadPersonas()
-      if (onUpdate) onUpdate()
-    } catch (err) {
-      console.error('Error deleting persona:', err)
-      alert(err.message)
-    }
-  }
-
-  // Toggle persona active state
-  const handleTogglePersonaActive = async (personaId, currentActive) => {
-    try {
-      const res = await fetch(
-        `/.netlify/functions/personas/${personaId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ active: !currentActive })
-        }
-      )
-
-      if (!res.ok) {
-        throw new Error('Erro ao atualizar status da persona')
-      }
-
-      await loadSquadPersonas()
-      if (onUpdate) onUpdate()
-    } catch (err) {
-      console.error('Error toggling persona status:', err)
-      alert(err.message)
-    }
+  const confirmRemovePersona = (persona) => {
+    setConfirmRemove(persona)
   }
 
   // Initialize
@@ -236,10 +151,22 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
     loadSquadPersonas()
   }, [loadSquadPersonas])
 
-  if (loading && personas.length === 0) {
+  // Helper function to get persona source display
+  const getPersonaSource = (persona) => {
+    const source = persona.source || 'workspace'
+    return {
+      value: source,
+      label: source === 'global' ? 'Global' : 'Workspace'
+    }
+  }
+
+  if (loading) {
     return (
       <div className="persona-card">
-        <div className="loading">Carregando personas...</div>
+        <div className="persona-card-header">
+          <h2>Personas da Squad</h2>
+        </div>
+        <div className="persona-loading">Carregando...</div>
       </div>
     )
   }
@@ -251,255 +178,247 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
     'membro_squad': 'Membro da Squad'
   }
 
+  // Get top 3 personas for display
+  const topPersonas = personas.slice(0, 3)
+  const hasMore = personas.length > 3
+
   return (
-    <div className="persona-card">
-      <div className="persona-card-header">
-        <h2>Personas da Squad</h2>
-        <button 
-          className="btn-add-persona"
-          onClick={() => {
-            setShowAddForm(!showAddForm)
-            if (!showAddForm) {
-              loadAvailablePersonas()
-            }
-          }}
-        >
-          {showAddForm ? '✕ Cancelar' : '+ Adicionar Persona'}
-        </button>
-      </div>
-
-      <p className="persona-guidance">
-        Essas personas existem para validar decisões relacionadas a este problema.
-      </p>
-
-      {/* Add persona form */}
-      {showAddForm && (
-        <div className="add-persona-form">
-          <div className="form-group">
-            <label>Persona do Workspace</label>
-            <select 
-              value={selectedPersona}
-              onChange={(e) => setSelectedPersona(e.target.value)}
-              className="form-select"
+    <>
+      <div className="persona-card">
+        <div className="persona-card-header">
+          <h2>Personas da Squad</h2>
+          <div className="persona-card-actions">
+            <button 
+              className="btn-link"
+              onClick={openAddModal}
+              title="Adicionar persona existente"
             >
-              <option value="">Selecione uma persona...</option>
-              {availablePersonas.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({typeLabels[p.type] || p.type})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Foco nesta Squad</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Ex: risco, experiência, custo, governança"
-              value={contextForm.focus}
-              onChange={(e) => setContextForm({ ...contextForm, focus: e.target.value })}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Contexto de Atuação</label>
-            <textarea
-              className="form-textarea"
-              placeholder="Explique como essa persona atua neste problema específico..."
-              value={contextForm.context_description}
-              onChange={(e) => setContextForm({ ...contextForm, context_description: e.target.value })}
-              rows={4}
-            />
-          </div>
-
-          <div className="form-actions">
-            <button className="btn btn-primary" onClick={handleAddPersona}>
-              Adicionar
+              + Adicionar
             </button>
           </div>
         </div>
-      )}
-
-      {/* Personas list */}
-      {personas.length === 0 ? (
-        <div className="empty-state">
-          <p>Nenhuma persona associada ainda.</p>
-          <p className="empty-hint">
-            Adicione personas para validar decisões e backlog desta squad.
-          </p>
-        </div>
-      ) : (
-        <div className="personas-list">
-          {personas.map((persona) => (
-            <div 
-              key={persona.association_id} 
-              className={`persona-item ${!persona.active ? 'persona-inactive' : ''}`}
-            >
-              <div className="persona-header">
-                <div className="persona-title-section">
-                  {editingPersonaId === persona.persona_id ? (
-                    <input
-                      type="text"
-                      className="persona-edit-name"
-                      value={editForm.name || ''}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      placeholder="Nome da persona"
-                    />
-                  ) : (
-                    <>
-                      <h3>
-                        {persona.name}
-                        {!persona.active && <span className="inactive-badge">Inativa</span>}
-                      </h3>
-                      <div className="persona-badges">
-                        <span className="persona-type-badge">
-                          {typeLabels[persona.type] || persona.type}
-                        </span>
-                        {persona.subtype && (
-                          <span className="persona-subtype-badge">
-                            {persona.subtype}
-                          </span>
-                        )}
-                        {persona.influence_level && (
-                          <div className="persona-influence-section">
-                            <strong>Influência:</strong>
-                            {persona.influence_level.includes(',') ? (
-                              <ul className="influence-list">
-                                {persona.influence_level.split(',').map((item, idx) => (
-                                  <li key={idx}>{item.trim()}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <span className="persona-influence-badge">
-                                {persona.influence_level}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="persona-actions">
-                  {editingPersonaId === persona.persona_id ? (
-                    <>
-                      <button 
-                        className="btn-persona-action btn-save"
-                        onClick={() => handleEditPersona(persona.persona_id)}
-                        title="Salvar alterações"
-                      >
-                        ✓
-                      </button>
-                      <button 
-                        className="btn-persona-action btn-cancel"
-                        onClick={() => {
-                          setEditingPersonaId(null)
-                          setEditForm({})
-                        }}
-                        title="Cancelar edição"
-                      >
-                        ✕
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button 
-                        className="btn-persona-action"
-                        onClick={() => {
-                          setEditingPersonaId(persona.persona_id)
-                          setEditForm({
-                            name: persona.name,
-                            type: persona.type,
-                            subtype: persona.subtype,
-                            goals: persona.goals,
-                            pain_points: persona.pain_points,
-                            behaviors: persona.behaviors,
-                            influence_level: persona.influence_level
-                          })
-                        }}
-                        title="Editar persona"
-                        aria-label="Editar persona"
-                      >
-                        ✎
-                      </button>
-                      <button 
-                        className="btn-persona-action"
-                        onClick={() => handleTogglePersonaActive(persona.persona_id, persona.active)}
-                        title={persona.active ? 'Desativar persona' : 'Ativar persona'}
-                        aria-label={persona.active ? 'Desativar persona' : 'Ativar persona'}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          {persona.active ? (
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
-                          ) : (
-                            <>
-                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                              <line x1="1" y1="1" x2="23" y2="23" />
-                            </>
-                          )}
-                        </svg>
-                      </button>
-                      <button 
-                        className="btn-persona-action btn-danger"
-                        onClick={() => handleDeletePersona(persona.persona_id)}
-                        title="Excluir persona (soft delete)"
-                        aria-label="Excluir persona"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
-                      </button>
-                      <button 
-                        className="btn-remove-persona"
-                        onClick={() => handleRemovePersona(persona.association_id)}
-                        title="Remover persona da squad"
-                        aria-label="Remover persona da squad"
-                      >
-                        ✕
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {persona.focus && (
-                <div className="persona-focus">
-                  <strong>Foco:</strong> {persona.focus}
-                </div>
-              )}
-
-              {persona.context_description && (
-                <div className="persona-context">
-                  {persona.context_description}
-                </div>
-              )}
-
-              <div className="persona-details">
-                {persona.goals && (
-                  <div className="persona-detail-item">
-                    <strong>Objetivos:</strong>
-                    <p>{persona.goals}</p>
+        
+        {personas.length === 0 ? (
+          <p className="persona-empty-text">Nenhuma persona associada</p>
+        ) : (
+          <>
+            <div className="persona-list">
+              {topPersonas.map((persona) => (
+                <div key={persona.association_id} className="persona-item">
+                  <div className="persona-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
                   </div>
-                )}
-                {persona.pain_points && (
-                  <div className="persona-detail-item">
-                    <strong>Dores:</strong>
-                    <p>{persona.pain_points}</p>
+                  <div className="persona-info">
+                    <div className="persona-name">{persona.name}</div>
+                    <div className="persona-meta">
+                      <span className={`persona-source ${getPersonaSource(persona).value}`}>
+                        {getPersonaSource(persona).label}
+                      </span>
+                    </div>
                   </div>
-                )}
-                {persona.behaviors && (
-                  <div className="persona-detail-item">
-                    <strong>Comportamentos:</strong>
-                    <p>{persona.behaviors}</p>
-                  </div>
-                )}
-              </div>
+                  <button
+                    className="btn-remove-persona"
+                    onClick={() => confirmRemovePersona(persona)}
+                    disabled={removing === persona.association_id}
+                    title="Remover persona da squad"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
+            {hasMore && (
+              <button 
+                className="btn-view-all"
+                onClick={() => setShowAllModal(true)}
+              >
+                Ver todos ({personas.length})
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Modal: View All Personas */}
+      {showAllModal && (
+        <div className="modal-overlay" onClick={() => setShowAllModal(false)}>
+          <div className="modal-content persona-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Todas as Personas da Squad</h2>
+              <button className="btn-close" onClick={() => setShowAllModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              {personas.length === 0 ? (
+                <p className="persona-empty-text">Nenhuma persona associada</p>
+              ) : (
+                <div className="persona-list-full">
+                  {personas.map((persona) => (
+                    <div key={persona.association_id} className="persona-item-full">
+                      <div className="persona-item-header">
+                        <div className="persona-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        </div>
+                        <div className="persona-info">
+                          <div className="persona-name">{persona.name}</div>
+                          <span className={`persona-source ${getPersonaSource(persona).value}`}>
+                            {getPersonaSource(persona).label}
+                          </span>
+                        </div>
+                        <button
+                          className="btn-remove-persona"
+                          onClick={() => confirmRemovePersona(persona)}
+                          disabled={removing === persona.association_id}
+                          title="Remover persona da squad"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                      {persona.focus && (
+                        <div className="persona-focus-full">
+                          <strong>Foco:</strong> {persona.focus}
+                        </div>
+                      )}
+                      {persona.context_description && (
+                        <p className="persona-description">{persona.context_description}</p>
+                      )}
+                      {(persona.goals || persona.pain_points || persona.behaviors) && (
+                        <div className="persona-details-full">
+                          {persona.goals && (
+                            <div className="persona-detail-section">
+                              <strong>Objetivos:</strong>
+                              <p>{persona.goals}</p>
+                            </div>
+                          )}
+                          {persona.pain_points && (
+                            <div className="persona-detail-section">
+                              <strong>Dores:</strong>
+                              <p>{persona.pain_points}</p>
+                            </div>
+                          )}
+                          {persona.behaviors && (
+                            <div className="persona-detail-section">
+                              <strong>Comportamentos:</strong>
+                              <p>{persona.behaviors}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowAllModal(false)}>
+                Fechar
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+
+      {/* Modal: Add Persona */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content persona-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Adicionar Persona à Squad</h2>
+              <button className="btn-close" onClick={() => setShowAddModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              {availablePersonas.length === 0 ? (
+                <p className="persona-empty-text">
+                  Todas as personas disponíveis já estão associadas a esta squad.
+                </p>
+              ) : (
+                <div className="persona-list-full">
+                  {availablePersonas.map((persona) => (
+                    <div key={persona.id} className="persona-item-full persona-item-add">
+                      <div className="persona-item-header">
+                        <div className="persona-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        </div>
+                        <div className="persona-info">
+                          <div className="persona-name">{persona.name}</div>
+                          <span className={`persona-source ${getPersonaSource(persona).value}`}>
+                            {getPersonaSource(persona).label}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className="btn btn-primary btn-sm btn-add-persona"
+                        onClick={() => handleAddPersona(persona)}
+                        disabled={adding === persona.id}
+                      >
+                        {adding === persona.id ? 'Adicionando...' : 'Adicionar'}
+                      </button>
+                      {persona.goals && (
+                        <p className="persona-description">{persona.goals}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Confirm Remove Persona */}
+      {confirmRemove && (
+        <div className="modal-overlay" onClick={() => setConfirmRemove(null)}>
+          <div className="modal-content modal-confirm" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Remover Persona da Squad</h2>
+              <button className="btn-close" onClick={() => setConfirmRemove(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p>
+                Tem certeza que deseja remover a persona <strong>{confirmRemove.name}</strong> desta squad?
+              </p>
+              <p className="confirm-note">
+                ⚠️ <strong>Nota:</strong> Apenas o vínculo com esta squad será removido. 
+                A persona continuará disponível no sistema e em outras squads.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setConfirmRemove(null)}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn btn-danger" 
+                onClick={() => handleRemovePersona(confirmRemove)}
+                disabled={removing === confirmRemove.association_id}
+              >
+                {removing === confirmRemove.association_id ? 'Removendo...' : 'Remover Vínculo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
