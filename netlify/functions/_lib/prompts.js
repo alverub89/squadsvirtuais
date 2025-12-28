@@ -153,6 +153,10 @@ async function logPromptExecution({
   promptVersionId,
   proposalId = null,
   workspaceId, // Kept for backward compatibility
+  relatedEntityType = null,
+  relatedEntityId = null,
+  inputSnapshot = null,
+  outputSnapshot = null,
   inputTokens,
   outputTokens,
   totalTokens,
@@ -175,6 +179,10 @@ async function logPromptExecution({
       prompt_version_id: promptVersionId,
       proposal_id: proposalId,
       workspace_id: workspaceId,
+      related_entity_type: relatedEntityType,
+      related_entity_id: relatedEntityId,
+      input_snapshot: inputSnapshot ? JSON.stringify(inputSnapshot) : null,
+      output_snapshot: outputSnapshot ? JSON.stringify(outputSnapshot) : null,
       input_tokens: inputTokens,
       output_tokens: outputTokens,
       total_tokens: totalTokens,
@@ -187,7 +195,7 @@ async function logPromptExecution({
     // Filter to only include fields that exist in the table
     const fieldsToInsert = {};
     Object.keys(candidateFields).forEach(field => {
-      if (availableColumns.has(field)) {
+      if (availableColumns.has(field) && candidateFields[field] !== null) {
         fieldsToInsert[field] = candidateFields[field];
       }
     });
@@ -195,6 +203,12 @@ async function logPromptExecution({
     // Check if we have at least prompt_version_id (minimum required field)
     if (!fieldsToInsert.prompt_version_id) {
       console.warn("[prompts] ai_prompt_executions schema incompatible (no prompt_version_id column), skipping log");
+      return;
+    }
+
+    // If related_entity_type column exists and is NOT NULL constraint, ensure it's provided
+    if (availableColumns.has('related_entity_type') && !fieldsToInsert.related_entity_type) {
+      console.warn("[prompts] related_entity_type is required but not provided, skipping log");
       return;
     }
 
@@ -208,12 +222,14 @@ async function logPromptExecution({
       VALUES (${placeholders})
     `;
 
+    console.log("[prompts] Attempting to log execution with columns:", columnNames.join(", "));
     await query(insertQuery, values);
 
-    console.log("[prompts] Execution logged successfully with columns:", columnNames.join(", "));
+    console.log("[prompts] Execution logged successfully");
   } catch (error) {
     console.error("[prompts] Error logging execution:", error.message);
     console.error("[prompts] Error code:", error.code);
+    console.error("[prompts] Error detail:", error.detail);
     // Don't throw - logging failure shouldn't break the main flow
   }
 }
