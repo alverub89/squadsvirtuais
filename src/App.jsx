@@ -14,6 +14,10 @@ import SquadRoles from './pages/SquadRoles'
 import SquadMemberRoles from './pages/SquadMemberRoles'
 import SquadValidationMatrix from './pages/SquadValidationMatrix'
 import WorkspaceRoles from './pages/WorkspaceRoles'
+import ProblemStatementsList from './pages/ProblemStatementsList'
+import CreateProblemStatement from './pages/CreateProblemStatement'
+import EditProblemStatement from './pages/EditProblemStatement'
+import ProblemStatementDetail from './pages/ProblemStatementDetail'
 
 export default function App() {
   return (
@@ -107,6 +111,38 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <SquadValidationMatrix />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/problems" 
+              element={
+                <ProtectedRoute>
+                  <ProblemStatementsList />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/problems/create" 
+              element={
+                <ProtectedRoute>
+                  <CreateProblemStatement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/problems/:problemId" 
+              element={
+                <ProtectedRoute>
+                  <ProblemStatementDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/workspaces/:workspaceId/problems/:problemId/edit" 
+              element={
+                <ProtectedRoute>
+                  <EditProblemStatement />
                 </ProtectedRoute>
               } 
             />
