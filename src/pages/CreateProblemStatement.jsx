@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/Layout'
@@ -24,7 +24,7 @@ export default function CreateProblemStatement() {
   const [loadingSquads, setLoadingSquads] = useState(true)
 
   // Load squads on mount
-  useState(() => {
+  useEffect(() => {
     const loadSquads = async () => {
       try {
         const res = await fetch(
