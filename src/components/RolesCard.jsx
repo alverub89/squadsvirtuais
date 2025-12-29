@@ -295,7 +295,7 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
         },
         body: JSON.stringify({
           workspace_id: workspaceId,
-          code: `${selectedRole.code}_custom`,
+          code: `${selectedRole.code}_${Date.now()}`,
           label: selectedRole.label,
           description: selectedRole.description || '',
           responsibilities: selectedRole.responsibilities || ''
@@ -345,30 +345,26 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
       await loadRoles()
       if (onUpdate) onUpdate()
 
-      // Find the newly added role in the list
-      const updatedRoles = await fetch(
-        `/.netlify/functions/squad-roles?squad_id=${squadId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      ).then(r => r.json())
-
-      const newlyAdded = (updatedRoles.roles || []).find(r => r.role_id === newRole.role.id)
-      
-      if (newlyAdded) {
-        // Open in edit mode
-        setSelectedRole(newlyAdded)
-        setEditForm({
-          label: newlyAdded.label,
-          description: newlyAdded.description || '',
-          responsibilities: newlyAdded.responsibilities || ''
-        })
-        setEditMode(true)
-      } else {
-        setShowDetailModal(false)
+      // Construct the newly added role data
+      const newlyAdded = {
+        squad_role_id: null, // Will be assigned by database
+        role_id: newRole.role.id,
+        label: newRole.role.label,
+        description: newRole.role.description,
+        responsibilities: newRole.role.responsibilities,
+        code: newRole.role.code,
+        source: 'workspace',
+        active: true
       }
+      
+      // Open in edit mode
+      setSelectedRole(newlyAdded)
+      setEditForm({
+        label: newlyAdded.label,
+        description: newlyAdded.description || '',
+        responsibilities: newlyAdded.responsibilities || ''
+      })
+      setEditMode(true)
     } catch (err) {
       console.error('Error duplicating and replacing role:', err)
       alert(err.message || 'Erro ao duplicar papel')

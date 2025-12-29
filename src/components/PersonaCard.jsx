@@ -289,33 +289,31 @@ export default function PersonaCard({ squadId, workspaceId, onUpdate }) {
       await loadSquadPersonas()
       if (onUpdate) onUpdate()
 
-      // Find the newly added persona in the list
-      const updatedPersonas = await fetch(
-        `/.netlify/functions/squad-personas?squad_id=${squadId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      ).then(r => r.json())
-
-      const newlyAdded = updatedPersonas.personas.find(p => p.persona_id === newPersona.persona.id)
-      
-      if (newlyAdded) {
-        // Open in edit mode
-        setSelectedPersona(newlyAdded)
-        setEditForm({
-          name: newlyAdded.name,
-          focus: newlyAdded.focus || '',
-          context_description: newlyAdded.context_description || '',
-          goals: newlyAdded.goals || '',
-          pain_points: newlyAdded.pain_points || '',
-          behaviors: newlyAdded.behaviors || ''
-        })
-        setEditMode(true)
-      } else {
-        setShowDetailModal(false)
+      // Construct the newly added persona data
+      const newlyAdded = {
+        association_id: null, // Will be assigned by database
+        persona_id: newPersona.persona.id,
+        name: newPersona.persona.name,
+        type: newPersona.persona.type,
+        focus: newPersona.persona.focus,
+        context_description: newPersona.persona.context_description,
+        goals: newPersona.persona.goals,
+        pain_points: newPersona.persona.pain_points,
+        behaviors: newPersona.persona.behaviors,
+        source: 'workspace'
       }
+      
+      // Open in edit mode
+      setSelectedPersona(newlyAdded)
+      setEditForm({
+        name: newlyAdded.name,
+        focus: newlyAdded.focus || '',
+        context_description: newlyAdded.context_description || '',
+        goals: newlyAdded.goals || '',
+        pain_points: newlyAdded.pain_points || '',
+        behaviors: newlyAdded.behaviors || ''
+      })
+      setEditMode(true)
     } catch (err) {
       console.error('Error duplicating and replacing persona:', err)
       alert(err.message || 'Erro ao duplicar persona')
