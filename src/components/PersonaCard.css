@@ -78,6 +78,14 @@
   background: #f3f4f6;
 }
 
+.persona-item-clickable {
+  cursor: pointer;
+}
+
+.persona-item-clickable:hover {
+  background: #e5e7eb;
+}
+
 .persona-icon {
   display: flex;
   align-items: center;
@@ -488,4 +496,111 @@
   .persona-details-full {
     margin-left: 0;
   }
+}
+
+/* Persona Edit Form */
+.persona-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #111827;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Persona Detail View */
+.persona-detail-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.persona-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.persona-detail-header .persona-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.persona-detail-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.persona-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.persona-detail-section strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.persona-detail-section p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.duplicate-info-box {
+  margin-top: 8px;
+  padding: 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+
+.duplicate-info-box p {
+  margin: 0;
+  font-size: 14px;
+  color: #1e40af;
+  line-height: 1.5;
 }
