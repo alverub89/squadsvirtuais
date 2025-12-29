@@ -10,10 +10,24 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
   const [loading, setLoading] = useState(true)
   const [showAllModal, setShowAllModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [selectedRole, setSelectedRole] = useState(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState({})
+  const [createForm, setCreateForm] = useState({
+    code: '',
+    label: '',
+    description: '',
+    responsibilities: ''
+  })
   const [availableRoles, setAvailableRoles] = useState([])
   const [adding, setAdding] = useState(null)
   const [removing, setRemoving] = useState(null)
   const [confirmRemove, setConfirmRemove] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
 
   const loadRoles = async () => {
     try {
@@ -159,6 +173,210 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
     setConfirmRemove(role)
   }
 
+  // Open create modal
+  const openCreateModal = () => {
+    setCreateForm({
+      code: '',
+      label: '',
+      description: '',
+      responsibilities: ''
+    })
+    setShowCreateModal(true)
+  }
+
+  // Create new workspace role
+  const handleCreateRole = async () => {
+    if (!createForm.code || !createForm.label) {
+      alert('Código e nome são obrigatórios')
+      return
+    }
+
+    try {
+      setCreating(true)
+
+      const res = await fetch('/.netlify/functions/workspace-roles', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          workspace_id: workspaceId,
+          ...createForm
+        })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erro ao criar role')
+      }
+
+      setShowCreateModal(false)
+      await loadRoles()
+      if (onUpdate) onUpdate()
+    } catch (err) {
+      console.error('Error creating role:', err)
+      alert(err.message || 'Erro ao criar role')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  // Open detail modal for a role
+  const handleRoleClick = (role) => {
+    setSelectedRole(role)
+    setEditForm({
+      label: role.label,
+      description: role.description || '',
+      responsibilities: role.responsibilities || ''
+    })
+    setEditMode(role.source === 'workspace')
+    setShowDetailModal(true)
+  }
+
+  // Save role edits
+  const handleSaveRole = async () => {
+    if (!editForm.label || !editForm.label.trim()) {
+      alert('Nome é obrigatório')
+      return
+    }
+
+    try {
+      setSaving(true)
+
+      const res = await fetch(
+        `/.netlify/functions/workspace-roles/${selectedRole.role_id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(editForm)
+        }
+      )
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erro ao salvar role')
+      }
+
+      await loadRoles()
+      if (onUpdate) onUpdate()
+      setShowDetailModal(false)
+      setSelectedRole(null)
+    } catch (err) {
+      console.error('Error saving role:', err)
+      alert(err.message || 'Erro ao salvar role')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Duplicate global role to workspace and replace in squad
+  const handleDuplicateAndReplace = async () => {
+    if (!selectedRole || selectedRole.source !== 'global') {
+      return
+    }
+
+    if (!confirm('Isso criará uma cópia deste papel no workspace e substituirá o vínculo nesta squad. Deseja continuar?')) {
+      return
+    }
+
+    try {
+      setDuplicating(true)
+
+      // Create workspace role
+      const createRes = await fetch('/.netlify/functions/workspace-roles', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          workspace_id: workspaceId,
+          code: `${selectedRole.code}_custom`,
+          label: selectedRole.label,
+          description: selectedRole.description || '',
+          responsibilities: selectedRole.responsibilities || ''
+        })
+      })
+
+      if (!createRes.ok) {
+        const data = await createRes.json()
+        throw new Error(data.error || 'Erro ao criar role')
+      }
+
+      const newRole = await createRes.json()
+
+      // Remove old association
+      const removeRes = await fetch(
+        `/.netlify/functions/squad-roles?squad_role_id=${selectedRole.squad_role_id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      if (!removeRes.ok) {
+        throw new Error('Erro ao remover vínculo antigo')
+      }
+
+      // Add new association
+      const addRes = await fetch('/.netlify/functions/squad-roles', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          squad_id: squadId,
+          workspace_role_id: newRole.role.id
+        })
+      })
+
+      if (!addRes.ok) {
+        throw new Error('Erro ao adicionar novo vínculo')
+      }
+
+      // Reload roles
+      await loadRoles()
+      if (onUpdate) onUpdate()
+
+      // Find the newly added role in the list
+      const updatedRoles = await fetch(
+        `/.netlify/functions/squad-roles?squad_id=${squadId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      ).then(r => r.json())
+
+      const newlyAdded = (updatedRoles.roles || []).find(r => r.role_id === newRole.role.id)
+      
+      if (newlyAdded) {
+        // Open in edit mode
+        setSelectedRole(newlyAdded)
+        setEditForm({
+          label: newlyAdded.label,
+          description: newlyAdded.description || '',
+          responsibilities: newlyAdded.responsibilities || ''
+        })
+        setEditMode(true)
+      } else {
+        setShowDetailModal(false)
+      }
+    } catch (err) {
+      console.error('Error duplicating and replacing role:', err)
+      alert(err.message || 'Erro ao duplicar papel')
+    } finally {
+      setDuplicating(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="roles-card">
@@ -189,6 +407,13 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
             </button>
             <button 
               className="btn-link"
+              onClick={openCreateModal}
+              title="Criar novo papel"
+            >
+              Criar
+            </button>
+            <button 
+              className="btn-link"
               onClick={() => navigate(`/workspaces/${workspaceId}/roles`)}
               title="Gerenciar papéis do workspace"
             >
@@ -203,7 +428,12 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
           <>
             <div className="roles-list">
               {topRoles.map((role) => (
-                <div key={role.squad_role_id} className="role-item">
+                <div 
+                  key={role.squad_role_id} 
+                  className="role-item role-item-clickable"
+                  onClick={() => handleRoleClick(role)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="role-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -222,7 +452,10 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
                   </div>
                   <button
                     className="btn-remove-role"
-                    onClick={() => confirmRemoveRole(role)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      confirmRemoveRole(role)
+                    }}
                     disabled={removing === role.squad_role_id}
                     title="Remover papel da squad"
                   >
@@ -415,6 +648,206 @@ export default function RolesCard({ squadId, workspaceId, onUpdate }) {
               >
                 {removing === confirmRemove.squad_role_id ? 'Removendo...' : 'Remover Vínculo'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Create Role */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => !creating && setShowCreateModal(false)}>
+          <div className="modal-content roles-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Criar Novo Papel</h2>
+              <button className="btn-close" onClick={() => !creating && setShowCreateModal(false)} disabled={creating}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="role-edit-form">
+                <div className="form-group">
+                  <label htmlFor="create-code">Código *</label>
+                  <input
+                    id="create-code"
+                    type="text"
+                    className="form-input"
+                    value={createForm.code}
+                    onChange={(e) => setCreateForm({ ...createForm, code: e.target.value })}
+                    placeholder="ex: frontend_dev"
+                  />
+                  <small>Identificador único (não pode ser alterado após criação)</small>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="create-label">Nome *</label>
+                  <input
+                    id="create-label"
+                    type="text"
+                    className="form-input"
+                    value={createForm.label}
+                    onChange={(e) => setCreateForm({ ...createForm, label: e.target.value })}
+                    placeholder="ex: Frontend Developer"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="create-description">Descrição</label>
+                  <textarea
+                    id="create-description"
+                    className="form-textarea"
+                    value={createForm.description}
+                    onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                    placeholder="Descreva o papel desta especialidade"
+                    rows="3"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="create-responsibilities">Responsabilidades</label>
+                  <textarea
+                    id="create-responsibilities"
+                    className="form-textarea"
+                    value={createForm.responsibilities}
+                    onChange={(e) => setCreateForm({ ...createForm, responsibilities: e.target.value })}
+                    placeholder="Liste as principais responsabilidades"
+                    rows="4"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowCreateModal(false)}
+                disabled={creating}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleCreateRole}
+                disabled={creating}
+              >
+                {creating ? 'Criando...' : 'Criar Papel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Role Detail */}
+      {showDetailModal && selectedRole && (
+        <div className="modal-overlay" onClick={() => !saving && !duplicating && setShowDetailModal(false)}>
+          <div className="modal-content roles-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editMode ? 'Editar Papel' : 'Detalhes do Papel'}</h2>
+              <button className="btn-close" onClick={() => !saving && !duplicating && setShowDetailModal(false)} disabled={saving || duplicating}>×</button>
+            </div>
+            <div className="modal-body">
+              {editMode ? (
+                <div className="role-edit-form">
+                  <div className="form-group">
+                    <label htmlFor="edit-label">Nome *</label>
+                    <input
+                      id="edit-label"
+                      type="text"
+                      className="form-input"
+                      value={editForm.label}
+                      onChange={(e) => setEditForm({ ...editForm, label: e.target.value })}
+                      placeholder="Nome do papel"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="edit-description">Descrição</label>
+                    <textarea
+                      id="edit-description"
+                      className="form-textarea"
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      placeholder="Descrição do papel"
+                      rows="3"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="edit-responsibilities">Responsabilidades</label>
+                    <textarea
+                      id="edit-responsibilities"
+                      className="form-textarea"
+                      value={editForm.responsibilities}
+                      onChange={(e) => setEditForm({ ...editForm, responsibilities: e.target.value })}
+                      placeholder="Responsabilidades do papel"
+                      rows="4"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="role-detail-view">
+                  <div className="role-detail-header">
+                    <div className="role-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3>{selectedRole.label}</h3>
+                      <span className={`role-source ${selectedRole.source}`}>
+                        {selectedRole.source === 'global' ? 'Global' : 'Workspace'}
+                      </span>
+                      {selectedRole.code && (
+                        <div className="role-code-badge">
+                          <code>{selectedRole.code}</code>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {selectedRole.description && (
+                    <div className="role-detail-section">
+                      <strong>Descrição:</strong>
+                      <p>{selectedRole.description}</p>
+                    </div>
+                  )}
+                  
+                  {selectedRole.responsibilities && (
+                    <div className="role-detail-section">
+                      <strong>Responsabilidades:</strong>
+                      <p>{selectedRole.responsibilities}</p>
+                    </div>
+                  )}
+
+                  {selectedRole.source === 'global' && (
+                    <div className="duplicate-info-box">
+                      <p>
+                        Este é um papel global (somente leitura). Para editá-lo, você pode duplicá-lo para o workspace.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowDetailModal(false)}
+                disabled={saving || duplicating}
+              >
+                {editMode ? 'Cancelar' : 'Fechar'}
+              </button>
+              {editMode ? (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleSaveRole}
+                  disabled={saving}
+                >
+                  {saving ? 'Salvando...' : 'Salvar'}
+                </button>
+              ) : selectedRole.source === 'global' && (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleDuplicateAndReplace}
+                  disabled={duplicating}
+                >
+                  {duplicating ? 'Duplicando...' : 'Duplicar para Workspace e Substituir'}
+                </button>
+              )}
             </div>
           </div>
         </div>
