@@ -159,7 +159,7 @@ async function createProblemStatement(event, userId) {
     `
     INSERT INTO sv.problem_statements 
       (squad_id, title, narrative, success_metrics, constraints, assumptions, open_questions, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()::date)
     RETURNING id, squad_id, title, narrative, success_metrics, constraints, 
               assumptions, open_questions, created_at, updated_at
     `,
@@ -282,7 +282,7 @@ async function updateProblemStatement(event, psId, userId) {
   }
   
   // Always update updated_at
-  updates.push(`updated_at = CURRENT_DATE`);
+  updates.push(`updated_at = NOW()::date`);
   
   if (updates.length === 1) {
     // Only updated_at would be updated, no actual changes
