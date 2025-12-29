@@ -4,61 +4,97 @@ const { authenticateRequest } = require("./_lib/auth");
 const { json } = require("./_lib/response");
 
 /**
- * Calculate quality status for a problem statement
- * Returns quality indicators without being punitive
+ * Helper to verify workspace membership
  */
-function calculateQualityStatus(ps) {
-  const issues = [];
+async function verifyWorkspaceMembership(workspaceId, userId) {
+  const memberCheck = await query(
+    `SELECT 1 FROM sv.workspace_members WHERE workspace_id = $1 AND user_id = $2`,
+    [workspaceId, userId]
+  );
+  return memberCheck.rows.length > 0;
+}
+
+/**
+ * GET /problem-statements?workspace_id=...
+ * List all problem statements for a workspace
+ */
+async function listProblemStatements(event, userId) {
+  const workspaceId = event.queryStringParameters?.workspace_id;
   
-  // Check title
-  if (!ps.title || ps.title.trim().length < 10) {
-    issues.push("O título está muito curto ou vazio");
+  if (!workspaceId) {
+    return json(400, { error: "workspace_id é obrigatório" });
   }
   
-  // Check narrative
-  if (!ps.narrative || ps.narrative.trim().length < 280) {
-    issues.push("A narrativa do problema precisa ser mais detalhada");
+  console.log("[problem-statements] Listing problem statements for workspace:", workspaceId);
+  
+  // Verify user is member of workspace
+  const isMember = await verifyWorkspaceMembership(workspaceId, userId);
+  if (!isMember) {
+    return json(403, { error: "Acesso negado ao workspace" });
   }
   
-  // Check success metrics
-  if (!ps.success_metrics || ps.success_metrics.trim().length === 0) {
-    issues.push("Defina métricas de sucesso para medir o impacto");
+  // Get all problem statements for workspace via squads
+  const result = await query(
+    `
+    SELECT ps.id, ps.squad_id, ps.title, ps.narrative, 
+           ps.success_metrics, ps.constraints, ps.assumptions, 
+           ps.open_questions, ps.created_at, ps.updated_at
+    FROM sv.problem_statements ps
+    JOIN sv.squads s ON ps.squad_id = s.id
+    WHERE s.workspace_id = $1
+    ORDER BY ps.created_at DESC
+    `,
+    [workspaceId]
+  );
+  
+  return json(200, {
+    problem_statements: result.rows
+  });
+}
+
+/**
+ * GET /problem-statements/:id
+ * Get a single problem statement by ID
+ */
+async function getProblemStatementById(psId, userId) {
+  console.log("[problem-statements] Getting problem statement:", psId);
+  
+  // Get problem statement with workspace info
+  const result = await query(
+    `
+    SELECT ps.id, ps.squad_id, ps.title, ps.narrative, 
+           ps.success_metrics, ps.constraints, ps.assumptions, 
+           ps.open_questions, ps.created_at, ps.updated_at,
+           s.workspace_id
+    FROM sv.problem_statements ps
+    JOIN sv.squads s ON ps.squad_id = s.id
+    WHERE ps.id = $1
+    `,
+    [psId]
+  );
+  
+  if (result.rows.length === 0) {
+    return json(404, { error: "Problem Statement não encontrado" });
   }
   
-  // Optional but suggested fields
-  const suggestions = [];
-  if (!ps.constraints || ps.constraints.trim().length === 0) {
-    suggestions.push("Considere documentar as restrições conhecidas");
+  const ps = result.rows[0];
+  const workspaceId = ps.workspace_id;
+  delete ps.workspace_id;
+  
+  // Verify user is member of workspace
+  const isMember = await verifyWorkspaceMembership(workspaceId, userId);
+  if (!isMember) {
+    return json(403, { error: "Acesso negado ao workspace" });
   }
   
-  if (!ps.open_questions || ps.open_questions.trim().length === 0) {
-    suggestions.push("Liste perguntas em aberto para orientar a investigação");
-  }
-  
-  // Determine overall status
-  let status = "good";
-  let message = null;
-  
-  if (issues.length > 0) {
-    status = "needs_improvement";
-    message = "Este problema ainda está pouco específico. Isso reduz a qualidade das sugestões da squad.";
-  } else if (suggestions.length > 0) {
-    status = "good";
-    message = "O problema está bem definido. Considere adicionar mais detalhes para melhorar ainda mais as sugestões.";
-  }
-  
-  return {
-    status,
-    message,
-    issues,
-    suggestions
-  };
+  return json(200, {
+    problem_statement: ps
+  });
 }
 
 /**
  * POST /problem-statements
- * Create a new problem statement for a squad
- * Stores it as a decision in sv.decisions
+ * Create a new problem statement
  */
 async function createProblemStatement(event, userId) {
   console.log("[problem-statements] Creating problem statement");
@@ -85,8 +121,8 @@ async function createProblemStatement(event, userId) {
     return json(400, { error: "squad_id é obrigatório" });
   }
   
-  if (!title || !narrative) {
-    return json(400, { error: "title e narrative são obrigatórios" });
+  if (!narrative || narrative.trim().length === 0) {
+    return json(400, { error: "narrative é obrigatório" });
   }
   
   // Get squad to verify workspace
@@ -98,142 +134,57 @@ async function createProblemStatement(event, userId) {
   if (squadResult.rows.length === 0) {
     return json(404, { error: "Squad não encontrada" });
   }
-  
+
   const workspaceId = squadResult.rows[0].workspace_id;
   
   // Verify user is member of workspace
-  const memberCheck = await query(
-    `SELECT 1 FROM sv.workspace_members WHERE workspace_id = $1 AND user_id = $2`,
-    [workspaceId, userId]
-  );
-  
-  if (memberCheck.rows.length === 0) {
+  const isMember = await verifyWorkspaceMembership(workspaceId, userId);
+  if (!isMember) {
     return json(403, { error: "Acesso negado ao workspace" });
   }
   
-  // Check if problem statement already exists for this squad
-  const existingCheck = await query(
-    `SELECT id FROM sv.decisions WHERE squad_id = $1 AND title = 'Problem Statement'`,
-    [squad_id]
-  );
-  
-  if (existingCheck.rows.length > 0) {
-    return json(400, { 
-      error: "Esta squad já possui um Problem Statement. Use PUT para atualizar.",
-      existing_id: existingCheck.rows[0].id
-    });
-  }
-  
-  // Build problem statement object
-  const problemStatement = {
-    title: title.trim(),
-    narrative: narrative.trim(),
-    success_metrics: success_metrics?.trim() || "",
-    constraints: constraints?.trim() || "",
-    assumptions: assumptions?.trim() || "",
-    open_questions: open_questions?.trim() || "",
-    created_at: new Date().toISOString()
+  // Prepare JSONB arrays (ensure they are arrays)
+  const prepareJsonbArray = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    }
+    return [];
   };
   
-  // Calculate quality
-  const quality = calculateQualityStatus(problemStatement);
-  
-  // Store as decision with special title
+  // Insert into sv.problem_statements
   const result = await query(
     `
-    INSERT INTO sv.decisions (squad_id, title, decision, created_by_user_id, created_by_role)
-    VALUES ($1, 'Problem Statement', $2, $3, 'User')
-    RETURNING id, created_at, updated_at
+    INSERT INTO sv.problem_statements 
+      (squad_id, title, narrative, success_metrics, constraints, assumptions, open_questions, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()::date)
+    RETURNING id, squad_id, title, narrative, success_metrics, constraints, 
+              assumptions, open_questions, created_at, updated_at
     `,
-    [squad_id, JSON.stringify(problemStatement), userId]
+    [
+      squad_id,
+      title?.trim() || null,
+      narrative.trim(),
+      JSON.stringify(prepareJsonbArray(success_metrics)),
+      JSON.stringify(prepareJsonbArray(constraints)),
+      JSON.stringify(prepareJsonbArray(assumptions)),
+      JSON.stringify(prepareJsonbArray(open_questions))
+    ]
   );
   
   console.log("[problem-statements] Problem statement created:", result.rows[0].id);
   
   return json(201, {
     ok: true,
-    problem_statement: {
-      id: result.rows[0].id,
-      squad_id,
-      ...problemStatement,
-      quality,
-      updated_at: result.rows[0].updated_at
-    }
-  });
-}
-
-/**
- * GET /problem-statements?squad_id=...
- * Get the current problem statement for a squad
- */
-async function getProblemStatement(event, userId) {
-  const squadId = event.queryStringParameters?.squad_id;
-  
-  if (!squadId) {
-    return json(400, { error: "squad_id é obrigatório" });
-  }
-  
-  console.log("[problem-statements] Getting problem statement for squad:", squadId);
-  
-  // Get squad to verify workspace
-  const squadResult = await query(
-    `SELECT workspace_id FROM sv.squads WHERE id = $1`,
-    [squadId]
-  );
-  
-  if (squadResult.rows.length === 0) {
-    return json(404, { error: "Squad não encontrada" });
-  }
-  
-  const workspaceId = squadResult.rows[0].workspace_id;
-  
-  // Verify user is member of workspace
-  const memberCheck = await query(
-    `SELECT 1 FROM sv.workspace_members WHERE workspace_id = $1 AND user_id = $2`,
-    [workspaceId, userId]
-  );
-  
-  if (memberCheck.rows.length === 0) {
-    return json(403, { error: "Acesso negado ao workspace" });
-  }
-  
-  // Get the problem statement (latest one with title 'Problem Statement')
-  const result = await query(
-    `
-    SELECT id, decision, created_at, updated_at
-    FROM sv.decisions
-    WHERE squad_id = $1 AND title = 'Problem Statement'
-    ORDER BY created_at DESC
-    LIMIT 1
-    `,
-    [squadId]
-  );
-  
-  if (result.rows.length === 0) {
-    return json(200, { problem_statement: null });
-  }
-  
-  const record = result.rows[0];
-  const problemStatement = JSON.parse(record.decision);
-  
-  // Calculate quality
-  const quality = calculateQualityStatus(problemStatement);
-  
-  return json(200, {
-    problem_statement: {
-      id: record.id,
-      squad_id: squadId,
-      ...problemStatement,
-      quality,
-      updated_at: record.updated_at
-    }
+    problem_statement: result.rows[0]
   });
 }
 
 /**
  * PUT /problem-statements/:id
  * Update a problem statement
- * Creates a history entry in sv.decisions before updating
  */
 async function updateProblemStatement(event, psId, userId) {
   console.log("[problem-statements] Updating problem statement:", psId);
@@ -257,10 +208,10 @@ async function updateProblemStatement(event, psId, userId) {
   // Get current problem statement
   const currentResult = await query(
     `
-    SELECT d.id, d.squad_id, d.decision, s.workspace_id
-    FROM sv.decisions d
-    JOIN sv.squads s ON d.squad_id = s.id
-    WHERE d.id = $1 AND d.title = 'Problem Statement'
+    SELECT ps.id, ps.squad_id, s.workspace_id
+    FROM sv.problem_statements ps
+    JOIN sv.squads s ON ps.squad_id = s.id
+    WHERE ps.id = $1
     `,
     [psId]
   );
@@ -271,74 +222,135 @@ async function updateProblemStatement(event, psId, userId) {
   
   const current = currentResult.rows[0];
   const workspaceId = current.workspace_id;
-  const squadId = current.squad_id;
   
   // Verify user is member of workspace
-  const memberCheck = await query(
-    `SELECT 1 FROM sv.workspace_members WHERE workspace_id = $1 AND user_id = $2`,
-    [workspaceId, userId]
-  );
-  
-  if (memberCheck.rows.length === 0) {
+  const isMember = await verifyWorkspaceMembership(workspaceId, userId);
+  if (!isMember) {
     return json(403, { error: "Acesso negado ao workspace" });
   }
   
-  // Parse current problem statement
-  const oldPs = JSON.parse(current.decision);
+  // Validate required fields
+  if (narrative !== undefined && narrative.trim().length === 0) {
+    return json(400, { error: "narrative não pode ser vazio" });
+  }
   
-  // Build updated problem statement
-  const newPs = {
-    title: title?.trim() || oldPs.title,
-    narrative: narrative?.trim() || oldPs.narrative,
-    success_metrics: success_metrics?.trim() || oldPs.success_metrics || "",
-    constraints: constraints?.trim() || oldPs.constraints || "",
-    assumptions: assumptions?.trim() || oldPs.assumptions || "",
-    open_questions: open_questions?.trim() || oldPs.open_questions || "",
-    updated_at: new Date().toISOString()
+  // Prepare JSONB arrays
+  const prepareJsonbArray = (value) => {
+    if (value === undefined) return undefined;
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    }
+    return [];
   };
   
-  // Create history entry in decisions
-  await query(
-    `
-    INSERT INTO sv.decisions (squad_id, title, decision, created_by_user_id, created_by_role)
-    VALUES ($1, 'Problem Statement atualizado', $2, $3, 'User')
-    `,
-    [
-      squadId,
-      JSON.stringify({
-        before: oldPs,
-        after: newPs,
-        changed_at: new Date().toISOString()
-      }),
-      userId
-    ]
-  );
+  // Build update query dynamically
+  const updates = [];
+  const values = [];
+  let paramIndex = 1;
   
-  // Update the main problem statement record
+  if (title !== undefined) {
+    updates.push(`title = $${paramIndex++}`);
+    values.push(title?.trim() || null);
+  }
+  
+  if (narrative !== undefined) {
+    updates.push(`narrative = $${paramIndex++}`);
+    values.push(narrative.trim());
+  }
+  
+  if (success_metrics !== undefined) {
+    updates.push(`success_metrics = $${paramIndex++}`);
+    values.push(JSON.stringify(prepareJsonbArray(success_metrics)));
+  }
+  
+  if (constraints !== undefined) {
+    updates.push(`constraints = $${paramIndex++}`);
+    values.push(JSON.stringify(prepareJsonbArray(constraints)));
+  }
+  
+  if (assumptions !== undefined) {
+    updates.push(`assumptions = $${paramIndex++}`);
+    values.push(JSON.stringify(prepareJsonbArray(assumptions)));
+  }
+  
+  if (open_questions !== undefined) {
+    updates.push(`open_questions = $${paramIndex++}`);
+    values.push(JSON.stringify(prepareJsonbArray(open_questions)));
+  }
+  
+  // Always update updated_at
+  updates.push(`updated_at = NOW()::date`);
+  
+  if (updates.length === 1) {
+    // Only updated_at would be updated, no actual changes
+    return json(400, { error: "Nenhum campo para atualizar" });
+  }
+  
+  values.push(psId);
+  
   const result = await query(
     `
-    UPDATE sv.decisions
-    SET decision = $1, updated_at = NOW()
-    WHERE id = $2
-    RETURNING id, updated_at
+    UPDATE sv.problem_statements
+    SET ${updates.join(', ')}
+    WHERE id = $${paramIndex}
+    RETURNING id, squad_id, title, narrative, success_metrics, constraints, 
+              assumptions, open_questions, created_at, updated_at
     `,
-    [JSON.stringify(newPs), psId]
+    values
   );
-  
-  // Calculate quality
-  const quality = calculateQualityStatus(newPs);
   
   console.log("[problem-statements] Problem statement updated:", psId);
   
   return json(200, {
     ok: true,
-    problem_statement: {
-      id: result.rows[0].id,
-      squad_id: squadId,
-      ...newPs,
-      quality,
-      updated_at: result.rows[0].updated_at
-    }
+    problem_statement: result.rows[0]
+  });
+}
+
+/**
+ * DELETE /problem-statements/:id
+ * Delete a problem statement
+ */
+async function deleteProblemStatement(psId, userId) {
+  console.log("[problem-statements] Deleting problem statement:", psId);
+  
+  // Get problem statement to verify workspace
+  const currentResult = await query(
+    `
+    SELECT ps.id, s.workspace_id
+    FROM sv.problem_statements ps
+    JOIN sv.squads s ON ps.squad_id = s.id
+    WHERE ps.id = $1
+    `,
+    [psId]
+  );
+  
+  if (currentResult.rows.length === 0) {
+    return json(404, { error: "Problem Statement não encontrado" });
+  }
+  
+  const workspaceId = currentResult.rows[0].workspace_id;
+  
+  // Verify user is member of workspace
+  const isMember = await verifyWorkspaceMembership(workspaceId, userId);
+  if (!isMember) {
+    return json(403, { error: "Acesso negado ao workspace" });
+  }
+  
+  // Delete the problem statement
+  await query(
+    `DELETE FROM sv.problem_statements WHERE id = $1`,
+    [psId]
+  );
+  
+  console.log("[problem-statements] Problem statement deleted:", psId);
+  
+  return json(200, {
+    ok: true,
+    message: "Problem Statement removido com sucesso"
   });
 }
 
@@ -359,20 +371,29 @@ exports.handler = async (event) => {
     const userId = decoded.userId;
     const method = event.httpMethod;
     
-    if (method === "POST") {
+    // Extract ID from path if present
+    const pathSegments = event.path.split('/').filter(Boolean);
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    const psId = lastSegment !== 'problem-statements' ? lastSegment : null;
+    
+    if (method === "GET") {
+      if (psId) {
+        return await getProblemStatementById(psId, userId);
+      } else {
+        return await listProblemStatements(event, userId);
+      }
+    } else if (method === "POST") {
       return await createProblemStatement(event, userId);
-    } else if (method === "GET") {
-      return await getProblemStatement(event, userId);
     } else if (method === "PUT") {
-      // Extract ID from path (last segment)
-      const pathSegments = event.path.split('/').filter(Boolean);
-      const psId = pathSegments[pathSegments.length - 1];
-      
       if (!psId) {
         return json(400, { error: "ID é obrigatório para PUT" });
       }
-      
       return await updateProblemStatement(event, psId, userId);
+    } else if (method === "DELETE") {
+      if (!psId) {
+        return json(400, { error: "ID é obrigatório para DELETE" });
+      }
+      return await deleteProblemStatement(psId, userId);
     } else {
       return json(405, { error: "Método não permitido" });
     }

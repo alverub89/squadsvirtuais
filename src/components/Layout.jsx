@@ -174,13 +174,15 @@ export default function Layout({ children }) {
             </button>
             <nav className="sidebar-menu">
               <button 
-                className={`sidebar-item ${currentPath.includes('/squads') ? 'active' : ''}`}
-                onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
+                className={`sidebar-item ${currentPath.includes('/problems') ? 'active' : ''}`}
+                onClick={() => navigate(`/workspaces/${workspaceId}/problems`)}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                Squads
+                Problemas
               </button>
               <button 
                 className={`sidebar-item ${currentPath.includes('/personas') ? 'active' : ''}`}
@@ -204,12 +206,14 @@ export default function Layout({ children }) {
                 </svg>
                 Papéis
               </button>
-              <button className="sidebar-item sidebar-item-disabled" disabled>
+              <button 
+                className={`sidebar-item ${currentPath.includes('/squads') ? 'active' : ''}`}
+                onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <path d="M9 3v18" />
+                  <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
                 </svg>
-                Backlog
+                Squads
               </button>
               <button className="sidebar-item sidebar-item-disabled" disabled>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -217,6 +221,13 @@ export default function Layout({ children }) {
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
                 Issues
+              </button>
+              <button className="sidebar-item sidebar-item-disabled" disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M9 3v18" />
+                </svg>
+                Backlog
               </button>
             </nav>
             <div className="sidebar-footer">
@@ -240,13 +251,15 @@ export default function Layout({ children }) {
       {isInWorkspace && (
         <nav className="bottom-nav">
           <button 
-            className={`nav-item ${currentPath === `/workspaces/${workspaceId}/squads` || (currentPath.includes('/squads/') && !currentPath.includes('/create')) ? 'active' : ''}`}
-            onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
+            className={`nav-item ${currentPath.includes('/problems') ? 'active' : ''}`}
+            onClick={() => navigate(`/workspaces/${workspaceId}/problems`)}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
-            <span>Squads</span>
+            <span>Problemas</span>
           </button>
           <button 
             className={`nav-item ${currentPath.includes('/personas') ? 'active' : ''}`}
@@ -270,12 +283,14 @@ export default function Layout({ children }) {
             </svg>
             <span>Papéis</span>
           </button>
-          <button className="nav-item nav-item-disabled" disabled>
+          <button 
+            className={`nav-item ${currentPath === `/workspaces/${workspaceId}/squads` || (currentPath.includes('/squads/') && !currentPath.includes('/create')) ? 'active' : ''}`}
+            onClick={() => navigate(`/workspaces/${workspaceId}/squads`)}
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M9 3v18" />
+              <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
             </svg>
-            <span>Backlog</span>
+            <span>Squads</span>
           </button>
           <button className="nav-item nav-item-disabled" disabled>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
