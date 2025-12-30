@@ -121,11 +121,11 @@
   color: #64748b;
 }
 
-.empty-state-cta {
-  margin-top: 24px !important;
+.empty-state .empty-state-cta {
+  margin-top: 24px;
   font-weight: 500;
-  color: #3b82f6 !important;
-  font-size: 17px !important;
+  color: #3b82f6;
+  font-size: 17px;
 }
 
 .loading,
