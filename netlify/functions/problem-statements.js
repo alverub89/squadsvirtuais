@@ -15,16 +15,57 @@ async function verifyWorkspaceMembership(workspaceId, userId) {
 }
 
 /**
- * GET /problem-statements?workspace_id=...
- * List all problem statements for a workspace
+ * GET /problem-statements?workspace_id=... or ?squad_id=...
+ * List all problem statements for a workspace or get problem statement for a squad
  */
 async function listProblemStatements(event, userId) {
   const workspaceId = event.queryStringParameters?.workspace_id;
+  const squadId = event.queryStringParameters?.squad_id;
   
-  if (!workspaceId) {
-    return json(400, { error: "workspace_id é obrigatório" });
+  if (!workspaceId && !squadId) {
+    return json(400, { error: "workspace_id ou squad_id é obrigatório" });
   }
   
+  // If squad_id is provided, get problem statement for that squad
+  if (squadId) {
+    console.log("[problem-statements] Getting problem statement for squad:", squadId);
+    
+    // Get squad to verify workspace membership
+    const squadResult = await query(
+      `SELECT workspace_id FROM sv.squads WHERE id = $1`,
+      [squadId]
+    );
+    
+    if (squadResult.rows.length === 0) {
+      return json(404, { error: "Squad não encontrada" });
+    }
+    
+    const squadWorkspaceId = squadResult.rows[0].workspace_id;
+    
+    // Verify user is member of workspace
+    const isMember = await verifyWorkspaceMembership(squadWorkspaceId, userId);
+    if (!isMember) {
+      return json(403, { error: "Acesso negado ao workspace" });
+    }
+    
+    // Get problem statement for this squad
+    const result = await query(
+      `
+      SELECT id, squad_id, title, narrative, 
+             success_metrics, constraints, assumptions, 
+             open_questions, created_at, updated_at
+      FROM sv.problem_statements
+      WHERE squad_id = $1
+      `,
+      [squadId]
+    );
+    
+    return json(200, {
+      problem_statement: result.rows[0] || null
+    });
+  }
+  
+  // Otherwise, list all problem statements for workspace
   console.log("[problem-statements] Listing problem statements for workspace:", workspaceId);
   
   // Verify user is member of workspace
@@ -233,19 +274,19 @@ async function updateProblemStatement(event, psId, userId) {
     return json(403, { error: "Acesso negado ao workspace" });
   }
   
-  // If updating squad_id, verify the squad exists and belongs to same workspace
-  if (squad_id) {
-    const squadResult = await query(
+  // If squad_id is being changed, verify new squad is in same workspace
+  if (squad_id !== undefined && squad_id !== current.squad_id) {
+    const newSquadResult = await query(
       `SELECT workspace_id FROM sv.squads WHERE id = $1`,
       [squad_id]
     );
     
-    if (squadResult.rows.length === 0) {
-      return json(404, { error: "Squad não encontrada" });
+    if (newSquadResult.rows.length === 0) {
+      return json(404, { error: "Nova squad não encontrada" });
     }
     
-    if (squadResult.rows[0].workspace_id !== workspaceId) {
-      return json(400, { error: "Squad pertence a outro workspace" });
+    if (newSquadResult.rows[0].workspace_id !== workspaceId) {
+      return json(400, { error: "Squad deve pertencer ao mesmo workspace" });
     }
   }
   
@@ -273,7 +314,7 @@ async function updateProblemStatement(event, psId, userId) {
   
   if (squad_id !== undefined) {
     updates.push(`squad_id = $${paramIndex++}`);
-    values.push(squad_id || null);
+    values.push(squad_id);
   }
   
   if (title !== undefined) {
