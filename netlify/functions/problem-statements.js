@@ -33,15 +33,14 @@ async function listProblemStatements(event, userId) {
     return json(403, { error: "Acesso negado ao workspace" });
   }
   
-  // Get all problem statements for workspace via squads
+  // Get all problem statements for workspace (both with and without squad association)
   const result = await query(
     `
-    SELECT ps.id, ps.squad_id, ps.title, ps.narrative, 
+    SELECT ps.id, ps.squad_id, ps.workspace_id, ps.title, ps.narrative, 
            ps.success_metrics, ps.constraints, ps.assumptions, 
            ps.open_questions, ps.created_at, ps.updated_at
     FROM sv.problem_statements ps
-    JOIN sv.squads s ON ps.squad_id = s.id
-    WHERE s.workspace_id = $1
+    WHERE ps.workspace_id = $1
     ORDER BY ps.created_at DESC
     `,
     [workspaceId]
@@ -62,12 +61,10 @@ async function getProblemStatementById(psId, userId) {
   // Get problem statement with workspace info
   const result = await query(
     `
-    SELECT ps.id, ps.squad_id, ps.title, ps.narrative, 
+    SELECT ps.id, ps.squad_id, ps.workspace_id, ps.title, ps.narrative, 
            ps.success_metrics, ps.constraints, ps.assumptions, 
-           ps.open_questions, ps.created_at, ps.updated_at,
-           s.workspace_id
+           ps.open_questions, ps.created_at, ps.updated_at
     FROM sv.problem_statements ps
-    JOIN sv.squads s ON ps.squad_id = s.id
     WHERE ps.id = $1
     `,
     [psId]
@@ -117,25 +114,31 @@ async function createProblemStatement(event, userId) {
   } = body;
   
   // Validate required fields
-  if (!squad_id) {
-    return json(400, { error: "squad_id é obrigatório" });
-  }
-  
   if (!narrative || narrative.trim().length === 0) {
     return json(400, { error: "narrative é obrigatório" });
   }
   
-  // Get squad to verify workspace
-  const squadResult = await query(
-    `SELECT workspace_id FROM sv.squads WHERE id = $1`,
-    [squad_id]
-  );
+  let workspaceId;
   
-  if (squadResult.rows.length === 0) {
-    return json(404, { error: "Squad não encontrada" });
+  // If squad_id is provided, verify it exists and get workspace_id
+  if (squad_id) {
+    const squadResult = await query(
+      `SELECT workspace_id FROM sv.squads WHERE id = $1`,
+      [squad_id]
+    );
+    
+    if (squadResult.rows.length === 0) {
+      return json(404, { error: "Squad não encontrada" });
+    }
+    
+    workspaceId = squadResult.rows[0].workspace_id;
+  } else {
+    // If no squad_id, we need workspace_id from request body
+    if (!body.workspace_id) {
+      return json(400, { error: "workspace_id é obrigatório quando squad_id não é fornecido" });
+    }
+    workspaceId = body.workspace_id;
   }
-
-  const workspaceId = squadResult.rows[0].workspace_id;
   
   // Verify user is member of workspace
   const isMember = await verifyWorkspaceMembership(workspaceId, userId);
@@ -158,13 +161,14 @@ async function createProblemStatement(event, userId) {
   const result = await query(
     `
     INSERT INTO sv.problem_statements 
-      (squad_id, title, narrative, success_metrics, constraints, assumptions, open_questions, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()::date)
-    RETURNING id, squad_id, title, narrative, success_metrics, constraints, 
+      (squad_id, workspace_id, title, narrative, success_metrics, constraints, assumptions, open_questions, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW()::date)
+    RETURNING id, squad_id, workspace_id, title, narrative, success_metrics, constraints, 
               assumptions, open_questions, created_at, updated_at
     `,
     [
-      squad_id,
+      squad_id || null,
+      workspaceId,
       title?.trim() || null,
       narrative.trim(),
       JSON.stringify(prepareJsonbArray(success_metrics)),
@@ -197,6 +201,7 @@ async function updateProblemStatement(event, psId, userId) {
   }
   
   const {
+    squad_id,
     title,
     narrative,
     success_metrics,
@@ -208,9 +213,8 @@ async function updateProblemStatement(event, psId, userId) {
   // Get current problem statement
   const currentResult = await query(
     `
-    SELECT ps.id, ps.squad_id, s.workspace_id
+    SELECT ps.id, ps.squad_id, ps.workspace_id
     FROM sv.problem_statements ps
-    JOIN sv.squads s ON ps.squad_id = s.id
     WHERE ps.id = $1
     `,
     [psId]
@@ -227,6 +231,22 @@ async function updateProblemStatement(event, psId, userId) {
   const isMember = await verifyWorkspaceMembership(workspaceId, userId);
   if (!isMember) {
     return json(403, { error: "Acesso negado ao workspace" });
+  }
+  
+  // If updating squad_id, verify the squad exists and belongs to same workspace
+  if (squad_id !== undefined && squad_id !== null) {
+    const squadResult = await query(
+      `SELECT workspace_id FROM sv.squads WHERE id = $1`,
+      [squad_id]
+    );
+    
+    if (squadResult.rows.length === 0) {
+      return json(404, { error: "Squad não encontrada" });
+    }
+    
+    if (squadResult.rows[0].workspace_id !== workspaceId) {
+      return json(400, { error: "Squad pertence a outro workspace" });
+    }
   }
   
   // Validate required fields
@@ -250,6 +270,11 @@ async function updateProblemStatement(event, psId, userId) {
   const updates = [];
   const values = [];
   let paramIndex = 1;
+  
+  if (squad_id !== undefined) {
+    updates.push(`squad_id = $${paramIndex++}`);
+    values.push(squad_id || null);
+  }
   
   if (title !== undefined) {
     updates.push(`title = $${paramIndex++}`);
@@ -320,9 +345,8 @@ async function deleteProblemStatement(psId, userId) {
   // Get problem statement to verify workspace
   const currentResult = await query(
     `
-    SELECT ps.id, s.workspace_id
+    SELECT ps.id, ps.workspace_id
     FROM sv.problem_statements ps
-    JOIN sv.squads s ON ps.squad_id = s.id
     WHERE ps.id = $1
     `,
     [psId]
