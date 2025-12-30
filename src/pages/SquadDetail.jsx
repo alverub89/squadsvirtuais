@@ -319,7 +319,8 @@ export default function SquadDetail() {
 
         {/* Problem Statement Card */}
         <ProblemStatementCard 
-          squadId={squadId} 
+          squadId={squadId}
+          workspaceId={workspaceId}
           onUpdate={loadSquadOverview}
         />
 

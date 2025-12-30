@@ -288,3 +288,110 @@
   padding: 8px 12px;
   border-radius: 4px;
 }
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.problem-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.problem-list-full {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.problem-item-full {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.problem-item-full.problem-item-add:hover {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+}
+
+.problem-item-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.problem-icon {
+  font-size: 24px;
+}
+
+.problem-info {
+  flex: 1;
+}
+
+.problem-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.problem-description {
+  font-size: 14px;
+  color: #64748b;
+  margin: 8px 0 0 0;
+  line-height: 1.5;
+}
+
+.problem-empty-text {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+  padding: 20px;
+}
+
+.btn-add-problem {
+  margin-top: 8px;
+  width: 100%;
+}
+
+/* Action buttons styling */
+.problem-statement-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-link:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
