@@ -234,7 +234,7 @@ async function updateProblemStatement(event, psId, userId) {
   }
   
   // If updating squad_id, verify the squad exists and belongs to same workspace
-  if (squad_id !== undefined && squad_id !== null) {
+  if (squad_id) {
     const squadResult = await query(
       `SELECT workspace_id FROM sv.squads WHERE id = $1`,
       [squad_id]

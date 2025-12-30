@@ -190,17 +190,7 @@ export default function ProblemStatementDetail() {
           {problemStatement.squad_id && (
             <div className="detail-section">
               <h2>Squad Associada</h2>
-              <div style={{ 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                gap: '8px',
-                padding: '8px 14px',
-                background: '#eff6ff',
-                color: '#3b82f6',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}>
+              <div className="squad-badge">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />

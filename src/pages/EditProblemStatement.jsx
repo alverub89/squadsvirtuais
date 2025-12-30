@@ -180,7 +180,7 @@ export default function EditProblemStatement() {
     }))
   }
 
-  if (loadingData || loadingSquads) {
+  if (loadingData) {
     return (
       <Layout>
         <div className="create-problem-container">
@@ -202,7 +202,7 @@ export default function EditProblemStatement() {
 
         <form onSubmit={handleSubmit} className="create-problem-form">
           <div className="form-section">
-            {squads.length > 0 && (
+            {!loadingSquads && squads.length > 0 && (
               <div className="form-group">
                 <label htmlFor="squad">Squad Associada</label>
                 <select
