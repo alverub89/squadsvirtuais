@@ -27,6 +27,21 @@ export default function ProblemStatementCard({ squadId, workspaceId, onUpdate })
     open_questions: ''
   })
 
+  const DESCRIPTION_PREVIEW_LENGTH = 200
+
+  // Helper function to validate problem statement form
+  const validateProblemForm = (data) => {
+    if (!data.title || !data.title.trim()) {
+      alert('Título é obrigatório')
+      return false
+    }
+    if (!data.narrative || !data.narrative.trim()) {
+      alert('Narrativa é obrigatória')
+      return false
+    }
+    return true
+  }
+
   const loadProblemStatement = async () => {
     try {
       setLoading(true)
@@ -137,6 +152,10 @@ export default function ProblemStatementCard({ squadId, workspaceId, onUpdate })
   }, [squadId, token])
 
   const handleCreate = async () => {
+    if (!validateProblemForm(formData)) {
+      return
+    }
+
     try {
       setCreating(true)
       
@@ -239,12 +258,15 @@ export default function ProblemStatementCard({ squadId, workspaceId, onUpdate })
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!formData.title.trim() || !formData.narrative.trim()) {
-      alert('Título e Narrativa são obrigatórios')
+    if (!validateProblemForm(formData)) {
       return
     }
 
-    await handleUpdate()
+    // In edit mode, we only update existing problem statements
+    // New problem statements are created through the create modal
+    if (problemStatement) {
+      await handleUpdate()
+    }
   }
 
   const handleCancel = () => {
@@ -481,7 +503,7 @@ export default function ProblemStatementCard({ squadId, workspaceId, onUpdate })
                           {adding === problem.id ? 'Adicionando...' : 'Adicionar'}
                         </button>
                         {problem.narrative && (
-                          <p className="problem-description">{problem.narrative.substring(0, 200)}...</p>
+                          <p className="problem-description">{problem.narrative.substring(0, DESCRIPTION_PREVIEW_LENGTH)}...</p>
                         )}
                       </div>
                     ))}
@@ -508,10 +530,6 @@ export default function ProblemStatementCard({ squadId, workspaceId, onUpdate })
               <div className="modal-body">
                 <form className="problem-statement-form" onSubmit={(e) => {
                   e.preventDefault()
-                  if (!formData.title.trim() || !formData.narrative.trim()) {
-                    alert('Título e Narrativa são obrigatórios')
-                    return
-                  }
                   handleCreate()
                 }}>
                   <div className="form-group">
@@ -600,13 +618,7 @@ export default function ProblemStatementCard({ squadId, workspaceId, onUpdate })
                 </button>
                 <button 
                   className="btn btn-primary" 
-                  onClick={() => {
-                    if (!formData.title.trim() || !formData.narrative.trim()) {
-                      alert('Título e Narrativa são obrigatórios')
-                      return
-                    }
-                    handleCreate()
-                  }}
+                  onClick={handleCreate}
                   disabled={creating}
                 >
                   {creating ? 'Criando...' : 'Criar Problema'}
@@ -856,7 +868,7 @@ export default function ProblemStatementCard({ squadId, workspaceId, onUpdate })
                         {adding === problem.id ? 'Adicionando...' : 'Adicionar'}
                       </button>
                       {problem.narrative && (
-                        <p className="problem-description">{problem.narrative.substring(0, 200)}...</p>
+                        <p className="problem-description">{problem.narrative.substring(0, DESCRIPTION_PREVIEW_LENGTH)}...</p>
                       )}
                     </div>
                   ))}
@@ -883,10 +895,6 @@ export default function ProblemStatementCard({ squadId, workspaceId, onUpdate })
             <div className="modal-body">
               <form className="problem-statement-form" onSubmit={(e) => {
                 e.preventDefault()
-                if (!formData.title.trim() || !formData.narrative.trim()) {
-                  alert('Título e Narrativa são obrigatórios')
-                  return
-                }
                 handleCreate()
               }}>
                 <div className="form-group">
@@ -975,13 +983,7 @@ export default function ProblemStatementCard({ squadId, workspaceId, onUpdate })
               </button>
               <button 
                 className="btn btn-primary" 
-                onClick={() => {
-                  if (!formData.title.trim() || !formData.narrative.trim()) {
-                    alert('Título e Narrativa são obrigatórios')
-                    return
-                  }
-                  handleCreate()
-                }}
+                onClick={handleCreate}
                 disabled={creating}
               >
                 {creating ? 'Criando...' : 'Criar Problema'}
