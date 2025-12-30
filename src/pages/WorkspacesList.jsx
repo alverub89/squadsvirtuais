@@ -215,8 +215,11 @@ export default function WorkspacesList() {
 
         {workspaces.length === 0 ? (
           <div className="empty-state">
-            <p>Você ainda não tem workspaces.</p>
-            <p>Crie seu primeiro workspace para começar!</p>
+            <div className="empty-state-icon">💼</div>
+            <h2>O que é um Workspace?</h2>
+            <p>Um workspace é o seu espaço de trabalho onde você organiza suas squads, membros e projetos.</p>
+            <p>Pense nele como uma área dedicada para sua empresa, equipe ou projeto específico.</p>
+            <p className="empty-state-cta">Crie seu primeiro workspace para começar a colaborar!</p>
           </div>
         ) : (
           <div className="workspaces-grid">
