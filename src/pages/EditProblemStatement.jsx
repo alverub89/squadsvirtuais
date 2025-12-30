@@ -18,6 +18,35 @@ export default function EditProblemStatement() {
     assumptions: [''],
     open_questions: ['']
   })
+  const [squads, setSquads] = useState([])
+  const [selectedSquadId, setSelectedSquadId] = useState('')
+  const [loadingSquads, setLoadingSquads] = useState(true)
+
+  // Load squads on mount
+  useEffect(() => {
+    const loadSquads = async () => {
+      try {
+        const res = await fetch(
+          `/.netlify/functions/squads?workspace_id=${workspaceId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        )
+
+        if (res.ok) {
+          const data = await res.json()
+          setSquads(data.squads || [])
+        }
+      } catch (err) {
+        console.error('Error loading squads:', err)
+      } finally {
+        setLoadingSquads(false)
+      }
+    }
+    loadSquads()
+  }, [workspaceId, token])
 
   useEffect(() => {
     const loadProblemStatement = async () => {
@@ -53,6 +82,9 @@ export default function EditProblemStatement() {
           assumptions: ensureArray(ps.assumptions),
           open_questions: ensureArray(ps.open_questions)
         })
+        
+        // Set the squad_id if present
+        setSelectedSquadId(ps.squad_id || '')
       } catch (err) {
         console.error('Error loading problem statement:', err)
         alert(err.message)
@@ -81,6 +113,18 @@ export default function EditProblemStatement() {
       // Filter out empty items from arrays
       const cleanArray = (arr) => arr.filter(item => item && item.trim().length > 0)
       
+      const requestBody = {
+        title: formData.title,
+        narrative: formData.narrative,
+        success_metrics: cleanArray(formData.success_metrics),
+        constraints: cleanArray(formData.constraints),
+        assumptions: cleanArray(formData.assumptions),
+        open_questions: cleanArray(formData.open_questions)
+      }
+      
+      // Include squad_id (can be null to unassociate)
+      requestBody.squad_id = selectedSquadId || null
+      
       const res = await fetch(
         `/.netlify/functions/problem-statements/${problemId}`,
         {
@@ -89,14 +133,7 @@ export default function EditProblemStatement() {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            title: formData.title,
-            narrative: formData.narrative,
-            success_metrics: cleanArray(formData.success_metrics),
-            constraints: cleanArray(formData.constraints),
-            assumptions: cleanArray(formData.assumptions),
-            open_questions: cleanArray(formData.open_questions)
-          })
+          body: JSON.stringify(requestBody)
         }
       )
 
@@ -165,6 +202,28 @@ export default function EditProblemStatement() {
 
         <form onSubmit={handleSubmit} className="create-problem-form">
           <div className="form-section">
+            {!loadingSquads && squads.length > 0 && (
+              <div className="form-group">
+                <label htmlFor="squad">Squad Associada</label>
+                <select
+                  id="squad"
+                  value={selectedSquadId}
+                  onChange={(e) => setSelectedSquadId(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">Nenhuma squad</option>
+                  {squads.map(squad => (
+                    <option key={squad.id} value={squad.id}>
+                      {squad.name || 'Squad sem nome'}
+                    </option>
+                  ))}
+                </select>
+                <p className="form-help">
+                  Associe ou desassocie o problema de uma squad
+                </p>
+              </div>
+            )}
+            
             <div className="form-group">
               <label htmlFor="title">Título</label>
               <input

@@ -142,7 +142,23 @@
   font-size: 14px;
   color: #475569;
   line-height: 1.6;
-  margin: 0;
+  margin: 0 0 12px 0;
+}
+
+.problem-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #eff6ff;
+  color: #3b82f6;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.problem-card-badge svg {
+  flex-shrink: 0;
 }
 
 .problem-card-footer {

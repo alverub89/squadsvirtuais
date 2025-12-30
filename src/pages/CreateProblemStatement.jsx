@@ -18,7 +18,7 @@ export default function CreateProblemStatement() {
     open_questions: ['']
   })
 
-  // We need a squad_id - for now, let's fetch the first available squad
+  // We need a squad_id - but it's now optional
   const [squads, setSquads] = useState([])
   const [selectedSquadId, setSelectedSquadId] = useState('')
   const [loadingSquads, setLoadingSquads] = useState(true)
@@ -39,9 +39,7 @@ export default function CreateProblemStatement() {
         if (res.ok) {
           const data = await res.json()
           setSquads(data.squads || [])
-          if (data.squads && data.squads.length > 0) {
-            setSelectedSquadId(data.squads[0].id)
-          }
+          // Don't auto-select the first squad anymore
         }
       } catch (err) {
         console.error('Error loading squads:', err)
@@ -60,16 +58,26 @@ export default function CreateProblemStatement() {
       return
     }
 
-    if (!selectedSquadId) {
-      alert('É necessário ter uma squad para criar um problema. Crie uma squad primeiro.')
-      return
-    }
-
     try {
       setLoading(true)
       
       // Filter out empty items from arrays
       const cleanArray = (arr) => arr.filter(item => item && item.trim().length > 0)
+      
+      const requestBody = {
+        workspace_id: workspaceId,
+        title: formData.title,
+        narrative: formData.narrative,
+        success_metrics: cleanArray(formData.success_metrics),
+        constraints: cleanArray(formData.constraints),
+        assumptions: cleanArray(formData.assumptions),
+        open_questions: cleanArray(formData.open_questions)
+      }
+      
+      // Only include squad_id if one is selected
+      if (selectedSquadId) {
+        requestBody.squad_id = selectedSquadId
+      }
       
       const res = await fetch('/.netlify/functions/problem-statements', {
         method: 'POST',
@@ -77,15 +85,7 @@ export default function CreateProblemStatement() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          squad_id: selectedSquadId,
-          title: formData.title,
-          narrative: formData.narrative,
-          success_metrics: cleanArray(formData.success_metrics),
-          constraints: cleanArray(formData.constraints),
-          assumptions: cleanArray(formData.assumptions),
-          open_questions: cleanArray(formData.open_questions)
-        })
+        body: JSON.stringify(requestBody)
       })
 
       if (!res.ok) {
@@ -141,25 +141,6 @@ export default function CreateProblemStatement() {
     )
   }
 
-  if (squads.length === 0) {
-    return (
-      <Layout>
-        <div className="create-problem-container">
-          <div className="empty-state">
-            <h2>Nenhuma squad disponível</h2>
-            <p>É necessário criar uma squad antes de criar um problema.</p>
-            <button
-              className="btn btn-primary"
-              onClick={() => navigate(`/workspaces/${workspaceId}/squads/create`)}
-            >
-              Criar Squad
-            </button>
-          </div>
-        </div>
-      </Layout>
-    )
-  }
-
   return (
     <Layout>
       <div className="create-problem-container">
@@ -172,25 +153,27 @@ export default function CreateProblemStatement() {
 
         <form onSubmit={handleSubmit} className="create-problem-form">
           <div className="form-section">
-            <div className="form-group">
-              <label htmlFor="squad">Squad Associada *</label>
-              <select
-                id="squad"
-                value={selectedSquadId}
-                onChange={(e) => setSelectedSquadId(e.target.value)}
-                required
-                className="form-select"
-              >
-                {squads.map(squad => (
-                  <option key={squad.id} value={squad.id}>
-                    {squad.name || 'Squad sem nome'}
-                  </option>
-                ))}
-              </select>
-              <p className="form-help">
-                O problema será associado a esta squad
-              </p>
-            </div>
+            {squads.length > 0 && (
+              <div className="form-group">
+                <label htmlFor="squad">Squad Associada</label>
+                <select
+                  id="squad"
+                  value={selectedSquadId}
+                  onChange={(e) => setSelectedSquadId(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">Nenhuma squad (associar depois)</option>
+                  {squads.map(squad => (
+                    <option key={squad.id} value={squad.id}>
+                      {squad.name || 'Squad sem nome'}
+                    </option>
+                  ))}
+                </select>
+                <p className="form-help">
+                  O problema pode ser associado a uma squad agora ou posteriormente
+                </p>
+              </div>
+            )}
 
             <div className="form-group">
               <label htmlFor="title">Título</label>
